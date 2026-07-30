@@ -1,0 +1,15 @@
+*.iml
+.gradle/
+local.properties
+.idea/
+.DS_Store
+build/
+captures/
+.externalNativeBuild
+.cxx
+local.properties
+
+# Signing material and built artefacts stay out of version control
+*.keystore
+keystore.properties
+*.apk
