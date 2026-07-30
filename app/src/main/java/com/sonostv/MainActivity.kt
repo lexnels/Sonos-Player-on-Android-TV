@@ -1,16 +1,21 @@
 package com.sonostv
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.runtime.getValue
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sonostv.media.NowPlayingService
 import com.sonostv.ui.DemoNowPlayingScreen
 import com.sonostv.ui.NowPlayingScreen
 import com.sonostv.ui.PlayerActions
@@ -19,6 +24,9 @@ import com.sonostv.ui.SonosTvTheme
 class MainActivity : ComponentActivity() {
 
     private val viewModel: NowPlayingViewModel by viewModels()
+
+    private val notificationPermission =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
 
     /**
      * Renders sample content instead of talking to the network, for inspecting the UI
@@ -31,6 +39,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
+        if (!demoMode) {
+            requestNotificationPermission()
+            NowPlayingService.start(this)
+        }
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
         WindowInsetsControllerCompat(window, window.decorView).apply {
@@ -120,6 +133,16 @@ class MainActivity : ComponentActivity() {
         }
 
         return handled || super.dispatchKeyEvent(event)
+    }
+
+    /**
+     * The media session is published either way; the permission only decides whether the
+     * accompanying notification is drawn, so a refusal is not worth reacting to.
+     */
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) return
+        notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 
     private companion object {
