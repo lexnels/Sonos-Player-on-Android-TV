@@ -64,8 +64,6 @@ private val AlbumArtShape = SquircleShape(radius = 22.dp, smoothing = 0.6f)
 
 private const val IdleTimeoutMs = 10_000L
 
-private val InfoColumnWidth = 400.dp
-
 @Composable
 fun NowPlayingScreen(
     state: NowPlaying,
@@ -197,8 +195,9 @@ private fun PlayerContent(
 
                 Spacer(Modifier.width(48.dp))
 
-                // A fixed width keeps the artwork from shifting as track titles change length.
-                Column(Modifier.width(InfoColumnWidth)) {
+                // Sized to the control row, so the block is symmetric within the screen
+                // and the artwork doesn't shift as track titles change length.
+                Column(Modifier.width(IntrinsicSize.Min)) {
                     Text(
                         text = eyebrow(state),
                         style = SonosText.Eyebrow,
