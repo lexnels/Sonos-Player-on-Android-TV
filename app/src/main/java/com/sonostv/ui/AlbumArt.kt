@@ -86,10 +86,10 @@ fun AlbumArt(
                     }
 
                     // Wide ambient halo, then a tighter drop beneath the cover.
-                    paint.setShadowLayer(72.dp.toPx(), 0f, offsetY, android.graphics.Color.argb(56, 0, 0, 0))
+                    paint.setShadowLayer(72.dp.toPx(), 0f, offsetY, android.graphics.Color.argb(48, 0, 0, 0))
                     canvas.nativeCanvas.drawPath(path, paint)
 
-                    paint.setShadowLayer(40.dp.toPx(), 0f, offsetY, android.graphics.Color.argb(115, 0, 0, 0))
+                    paint.setShadowLayer(40.dp.toPx(), 0f, offsetY, android.graphics.Color.argb(100, 0, 0, 0))
                     canvas.nativeCanvas.drawPath(path, paint)
                 }
             }
