@@ -28,6 +28,14 @@
         android:theme="@style/Theme.SonosTV">
 
         <activity
+            android:name=".media.SessionLaunchActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity="com.sonostv.session.launch"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
+        <activity
             android:name=".MainActivity"
             android:banner="@drawable/app_banner"
             android:exported="true"

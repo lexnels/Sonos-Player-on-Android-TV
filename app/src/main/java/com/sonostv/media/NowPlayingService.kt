@@ -23,7 +23,6 @@ import androidx.media.app.NotificationCompat.MediaStyle
 import androidx.media.session.MediaButtonReceiver
 import coil.imageLoader
 import coil.request.ImageRequest
-import com.sonostv.MainActivity
 import com.sonostv.R
 import com.sonostv.SonosController
 import com.sonostv.sonos.NowPlaying
@@ -61,12 +60,14 @@ class NowPlayingService : Service() {
     private var lastPlaybackPublishedAt = 0L
     private var startedForeground = false
 
+    private var openAppIntent: PendingIntent? = null
+
     override fun onCreate() {
         super.onCreate()
         createChannel()
         session = MediaSessionCompat(this, "SonosTV").apply {
             setCallback(SessionCallback())
-            setSessionActivity(openAppIntent())
+            setSessionActivity(buildOpenAppIntent())
             isActive = true
         }
 
@@ -142,7 +143,7 @@ class NowPlayingService : Service() {
         val notificationSignature = "$signature|${transport?.state}|${state.group?.name}"
         if (notificationSignature != lastNotificationSignature) {
             lastNotificationSignature = notificationSignature
-            session.setSessionActivity(openAppIntent())
+            session.setSessionActivity(buildOpenAppIntent())
             startForeground(buildNotification(state))
         }
     }
@@ -244,7 +245,7 @@ class NowPlayingService : Service() {
             .setContentText(listOfNotNull(track?.artist, track?.album ?: transport?.source).joinToString(" — "))
             .setSubText(state.group?.name)
             .setLargeIcon(artwork)
-            .setContentIntent(session.controller.sessionActivity)
+            .setContentIntent(buildOpenAppIntent())
             .setDeleteIntent(mediaAction(PlaybackStateCompat.ACTION_STOP))
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
@@ -288,22 +289,19 @@ class NowPlayingService : Service() {
      * notification.
      *
      * Google TV's home screen sends this from the launcher while we only have a
-     * foreground service, so Android 14+ treats it as a background activity start
-     * and drops it unless the PendingIntent opts in. Creator *and* sender modes are
-     * both required: only the creator grant still leaves the existing task in the
-     * background on current Google TV builds.
+     * foreground service, so Android 14+ treats it as a background activity start.
+     * The trampoline task plus creator/sender BAL opt-in on the [PendingIntent] is what
+     * lets the launch succeed on current Google TV builds.
      */
-    private fun openAppIntent(): PendingIntent {
-        val intent = Intent(this, MainActivity::class.java).apply {
-            action = Intent.ACTION_MAIN
-            addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                Intent.FLAG_ACTIVITY_SINGLE_TOP or
-                Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+    private fun buildOpenAppIntent(): PendingIntent {
+        openAppIntent?.let { return it }
+
+        val intent = Intent(this, SessionLaunchActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
         val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        return PendingIntent.getActivity(this, 0, intent, flags, activityStartOptions())
+        openAppIntent = PendingIntent.getActivity(this, REQUEST_OPEN_APP, intent, flags, activityStartOptions())
+        return openAppIntent!!
     }
 
     private fun activityStartOptions(): android.os.Bundle? {
@@ -316,17 +314,14 @@ class NowPlayingService : Service() {
     }
 
     /**
-     * ALLOW_ALWAYS is the only mode that actually brings an existing task forward
-     * from the Google TV now-playing card. The constant shipped after API 34, so
-     * look it up when present and fall back to ALLOWED on older SDKs.
+     * ALLOW_ALWAYS (4) is required to open from the Google TV now-playing card, but it
+     * is only accepted from API 36. On 34–35 use ALLOWED so service startup does not crash.
      */
-    private fun backgroundActivityStartMode(): Int {
-        val allowAlways = runCatching {
-            ActivityOptions::class.java
-                .getField("MODE_BACKGROUND_ACTIVITY_START_ALLOW_ALWAYS")
-                .getInt(null)
-        }.getOrNull()
-        return allowAlways ?: ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+    private fun backgroundActivityStartMode(): Int = when {
+        Build.VERSION.SDK_INT >= 36 -> 4 // MODE_BACKGROUND_ACTIVITY_START_ALLOW_ALWAYS
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE ->
+            ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+        else -> 0
     }
 
     private fun createChannel() {
@@ -359,6 +354,7 @@ class NowPlayingService : Service() {
     companion object {
         private const val CHANNEL_ID = "now_playing"
         private const val NOTIFICATION_ID = 1
+        private const val REQUEST_OPEN_APP = 100
         private const val ART_SIZE = 512
         private const val PLAYBACK_RESYNC_MS = 5_000L
         private const val POSITION_DRIFT_MS = 2_000L

@@ -1,10 +1,20 @@
 # Sonos Now Playing on TV
 
+<p>
+  <img src="https://img.shields.io/badge/Kotlin-7F52FF?style=flat-square&logo=kotlin&logoColor=white" alt="Kotlin">
+  <img src="https://img.shields.io/badge/Jetpack%20Compose-4285F4?style=flat-square&logo=jetpackcompose&logoColor=white" alt="Jetpack Compose">
+  <img src="https://img.shields.io/badge/Android%20TV-3DDC84?style=flat-square&logo=android&logoColor=white" alt="Android TV">
+  <img src="https://img.shields.io/badge/Material%203-6750A4?style=flat-square&logo=materialdesign&logoColor=white" alt="Material 3">
+  <img src="https://img.shields.io/badge/OkHttp-311C24?style=flat-square" alt="OkHttp">
+  <img src="https://img.shields.io/badge/Coil-000000?style=flat-square" alt="Coil">
+  <img src="https://img.shields.io/badge/Gradle-02303A?style=flat-square&logo=gradle&logoColor=white" alt="Gradle">
+</p>
+
 A full-screen now-playing screen for **Android TV** and **Google TV**. Put on a record, sit on the sofa, and the album art fills the television.
 
 It finds your Sonos speakers on your home Wi-Fi. You do not need a Sonos account, and this is not an official Sonos app.
 
-**Version 1.2**
+**Version 1.3**
 
 <p align="center">
   <img src="docs/screenshots/now-playing.png" alt="Now playing on the TV: album art, song title, and playback buttons" width="800">
@@ -96,3 +106,7 @@ Use the volume keys while this app (or the screensaver) is on screen. Some remot
 
 **Install is blocked**  
 Allow installs from the file manager or LocalSend when Android asks. That is normal for apps that are not in the Play Store.
+
+## How this was made
+
+I'm a designer and front-end developer by trade. I use AI-assisted coding tools to develop this app.

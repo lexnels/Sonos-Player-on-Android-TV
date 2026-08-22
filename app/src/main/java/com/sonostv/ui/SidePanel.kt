@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -51,6 +52,11 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -152,6 +158,7 @@ fun RoomList(
 ) {
     val roomFocus = remember(groups.size) { List(groups.size) { FocusRequester() } }
     val settingsFocus = remember { FocusRequester() }
+    var lastSpeakerFocused by remember { mutableStateOf(false) }
 
     LaunchedEffect(groups.size) {
         runCatching {
@@ -164,44 +171,47 @@ fun RoomList(
             .fillMaxWidth()
             .fillMaxHeight()
             .focusGroup()
-            .focusProperties { exit = { FocusRequester.Cancel } },
+            .focusProperties { exit = { FocusRequester.Cancel } }
+            // Steal Down before the scroller consumes it, otherwise focus never
+            // leaves the last speaker for Settings.
+            .onPreviewKeyEvent { event ->
+                if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                if (event.key != Key.DirectionDown || !lastSpeakerFocused) return@onPreviewKeyEvent false
+                runCatching { settingsFocus.requestFocus() }
+                true
+            }
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         if (groups.isEmpty()) {
             EmptyPanelMessage("No rooms found")
-            Spacer(Modifier.weight(1f))
-        } else {
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
-            ) {
-                groups.forEachIndexed { index, group ->
-                    val isFirst = index == 0
-                    val isLast = index == groups.lastIndex
-                    PanelRow(
-                        primary = group.name,
-                        secondary = if (group.members.size > 1) {
-                            group.members.joinToString(", ") { it.name }
-                        } else {
-                            null
-                        },
-                        artUrl = null,
-                        placeholderIcon = Icons.Rounded.Speaker,
-                        isCurrent = group.id == selectedId,
-                        onClick = { onSelect(group) },
-                        modifier = Modifier
-                            .focusRequester(roomFocus[index])
-                            .focusProperties {
-                                if (isFirst) up = FocusRequester.Cancel
-                                if (isLast) down = settingsFocus
-                            },
-                    )
-                }
-            }
         }
+        groups.forEachIndexed { index, group ->
+            val isFirst = index == 0
+            val isLast = index == groups.lastIndex
+            PanelRow(
+                primary = group.name,
+                secondary = if (group.members.size > 1) {
+                    group.members.joinToString(", ") { it.name }
+                } else {
+                    null
+                },
+                artUrl = null,
+                placeholderIcon = Icons.Rounded.Speaker,
+                isCurrent = group.id == selectedId,
+                onClick = { onSelect(group) },
+                modifier = Modifier
+                    .focusRequester(roomFocus[index])
+                    .onFocusChanged { if (isLast) lastSpeakerFocused = it.isFocused }
+                    .focusProperties {
+                        if (isFirst) up = FocusRequester.Cancel
+                        if (isLast) down = settingsFocus
+                    },
+            )
+        }
+
+        Spacer(Modifier.height(24.dp))
 
         PanelRow(
             primary = "Settings",
@@ -211,7 +221,6 @@ fun RoomList(
             isCurrent = false,
             onClick = onOpenSettings,
             modifier = Modifier
-                .padding(horizontal = 16.dp)
                 .focusRequester(settingsFocus)
                 .focusProperties {
                     up = roomFocus.lastOrNull() ?: FocusRequester.Cancel
