@@ -53,7 +53,7 @@ import coil.compose.AsyncImage
 import com.sonostv.sonos.SonosGroup
 import com.sonostv.sonos.Track
 
-private val PanelWidth = 312.dp
+private val PanelWidth = 280.dp
 
 @Composable
 fun SidePanel(
@@ -73,12 +73,12 @@ fun SidePanel(
                 .width(PanelWidth)
                 .fillMaxHeight()
                 .background(SonosColors.PanelBackground)
-                .padding(top = 30.dp, bottom = 22.dp),
+                .padding(top = 24.dp, bottom = 18.dp),
         ) {
             Text(
                 text = header.uppercase(),
                 style = SonosText.PanelHeader,
-                modifier = Modifier.padding(start = 22.dp, bottom = 12.dp),
+                modifier = Modifier.padding(start = 18.dp, bottom = 10.dp),
             )
             content()
         }
@@ -192,13 +192,13 @@ private fun PanelRow(
                 indication = null,
                 onClick = onClick,
             )
-            .padding(horizontal = 12.dp, vertical = 9.dp),
+            .padding(horizontal = 10.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
             Modifier
-                .size(42.dp)
-                .clip(RoundedCornerShape(6.dp))
+                .size(36.dp)
+                .clip(RoundedCornerShape(5.dp))
                 .background(Color.White.copy(alpha = 0.08f)),
             contentAlignment = Alignment.Center,
         ) {
@@ -207,19 +207,19 @@ private fun PanelRow(
                     model = artUrl,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.size(42.dp),
+                    modifier = Modifier.size(36.dp),
                 )
             } else {
                 Icon(
                     imageVector = placeholderIcon,
                     contentDescription = null,
                     tint = contentColor,
-                    modifier = Modifier.size(21.dp),
+                    modifier = Modifier.size(18.dp),
                 )
             }
         }
 
-        Spacer(Modifier.width(12.dp))
+        Spacer(Modifier.width(10.dp))
 
         Column(Modifier.weight(1f)) {
             Text(

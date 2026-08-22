@@ -40,54 +40,55 @@ object SonosText {
 
     val Eyebrow = TextStyle(
         fontFamily = family,
-        fontSize = 13.sp,
+        fontSize = 11.sp,
         fontWeight = FontWeight.SemiBold,
-        letterSpacing = 1.6.sp,
+        letterSpacing = 1.4.sp,
         color = SonosColors.Tertiary,
     )
     val Title = TextStyle(
         fontFamily = family,
-        fontSize = 40.sp,
+        fontSize = 22.sp,
         fontWeight = FontWeight.Bold,
-        letterSpacing = (-0.8).sp,
-        lineHeight = 46.sp,
+        letterSpacing = (-0.4).sp,
+        lineHeight = 26.sp,
         color = SonosColors.Primary,
     )
     val Artist = TextStyle(
         fontFamily = family,
-        fontSize = 24.sp,
+        fontSize = 15.sp,
         fontWeight = FontWeight.Medium,
-        letterSpacing = (-0.2).sp,
+        letterSpacing = (-0.1).sp,
         color = SonosColors.Secondary,
     )
     val Album = TextStyle(
         fontFamily = family,
-        fontSize = 17.sp,
+        fontSize = 15.sp,
         fontWeight = FontWeight.Normal,
+        letterSpacing = (-0.1).sp,
         color = SonosColors.Tertiary,
     )
     val Timecode = TextStyle(
         fontFamily = family,
-        fontSize = 13.sp,
+        fontSize = 11.sp,
         fontWeight = FontWeight.Medium,
         color = SonosColors.Tertiary,
     )
     val PanelHeader = TextStyle(
         fontFamily = family,
-        fontSize = 15.sp,
+        fontSize = 13.sp,
         fontWeight = FontWeight.SemiBold,
-        letterSpacing = 1.4.sp,
+        letterSpacing = 1.2.sp,
         color = SonosColors.Tertiary,
     )
     val ListPrimary = TextStyle(
         fontFamily = family,
-        fontSize = 17.sp,
+        fontSize = 15.sp,
         fontWeight = FontWeight.Medium,
         color = SonosColors.Primary,
     )
     val ListSecondary = TextStyle(
         fontFamily = family,
-        fontSize = 14.sp,
+        fontSize = 12.sp,
         fontWeight = FontWeight.Normal,
         color = SonosColors.Secondary,
     )

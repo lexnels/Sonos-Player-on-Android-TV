@@ -67,6 +67,10 @@ class NowPlayingService : Service() {
         session = MediaSessionCompat(this, "SonosTV").apply {
             setCallback(SessionCallback())
             setSessionActivity(openAppIntent())
+            setFlags(
+                MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or
+                    MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS,
+            )
             isActive = true
         }
 
@@ -142,6 +146,7 @@ class NowPlayingService : Service() {
         val notificationSignature = "$signature|${transport?.state}|${state.group?.name}"
         if (notificationSignature != lastNotificationSignature) {
             lastNotificationSignature = notificationSignature
+            session.setSessionActivity(openAppIntent())
             startForeground(buildNotification(state))
         }
     }
@@ -286,28 +291,46 @@ class NowPlayingService : Service() {
      * The intent behind "Open" in launcher now-playing panels, and behind tapping the
      * notification.
      *
-     * It is spelled as a launcher intent so the system reuses an existing task instead of
-     * stacking a second copy of the app. From Android 14 a background app no longer lends
-     * its activity-start privileges to intents it hands out, which silently drops the
-     * launch for every sender except the notification shade, so opt back in explicitly.
+     * Google TV's home screen sends this from the launcher while we only have a
+     * foreground service, so Android 14+ treats it as a background activity start
+     * and drops it unless the PendingIntent opts in. Creator *and* sender modes are
+     * both required: only the creator grant still leaves the existing task in the
+     * background on current Google TV builds.
      */
     private fun openAppIntent(): PendingIntent {
         val intent = Intent(this, MainActivity::class.java).apply {
             action = Intent.ACTION_MAIN
-            addCategory(Intent.CATEGORY_LAUNCHER)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED
+            addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
         }
         val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        val options = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            ActivityOptions.makeBasic()
-                .setPendingIntentCreatorBackgroundActivityStartMode(
-                    ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED,
-                )
-                .toBundle()
-        } else {
-            null
-        }
-        return PendingIntent.getActivity(this, 0, intent, flags, options)
+        return PendingIntent.getActivity(this, 0, intent, flags, activityStartOptions())
+    }
+
+    private fun activityStartOptions(): android.os.Bundle? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return null
+        val mode = backgroundActivityStartMode()
+        return ActivityOptions.makeBasic()
+            .setPendingIntentCreatorBackgroundActivityStartMode(mode)
+            .setPendingIntentBackgroundActivityStartMode(mode)
+            .toBundle()
+    }
+
+    /**
+     * ALLOW_ALWAYS is the only mode that actually brings an existing task forward
+     * from the Google TV now-playing card. The constant shipped after API 34, so
+     * look it up when present and fall back to ALLOWED on older SDKs.
+     */
+    private fun backgroundActivityStartMode(): Int {
+        val allowAlways = runCatching {
+            ActivityOptions::class.java
+                .getField("MODE_BACKGROUND_ACTIVITY_START_ALLOW_ALWAYS")
+                .getInt(null)
+        }.getOrNull()
+        return allowAlways ?: ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
     }
 
     private fun createChannel() {

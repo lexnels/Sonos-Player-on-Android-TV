@@ -48,8 +48,8 @@ fun TvIconButton(
     contentDescription: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    size: Dp = 48.dp,
-    iconSize: Dp = 23.dp,
+    size: Dp = 42.dp,
+    iconSize: Dp = 20.dp,
     focusRequester: FocusRequester? = null,
     enabled: Boolean = true,
     idleBackground: Color = SonosColors.ControlIdle,
@@ -108,7 +108,7 @@ fun Scrubber(
 
     Box(
         modifier = modifier
-            .height(20.dp)
+            .height(16.dp)
             .onFocusChanged { focused = it.isFocused }
             .onKeyEvent { event ->
                 if (!enabled || event.type != KeyEventType.KeyDown) return@onKeyEvent false
@@ -151,7 +151,7 @@ fun Scrubber(
 fun ControlDivider(modifier: Modifier = Modifier) {
     Box(
         modifier
-            .size(width = 1.dp, height = 30.dp)
+            .size(width = 1.dp, height = 24.dp)
             .background(Color.White.copy(alpha = 0.14f)),
     )
 }

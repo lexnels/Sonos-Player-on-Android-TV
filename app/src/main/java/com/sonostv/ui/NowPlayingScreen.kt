@@ -3,7 +3,6 @@ package com.sonostv.ui
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -20,7 +19,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
-import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Refresh
@@ -28,7 +26,6 @@ import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.SkipPrevious
 import androidx.compose.material.icons.rounded.Speaker
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -39,19 +36,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import com.sonostv.sonos.ConnectionState
 import com.sonostv.sonos.NowPlaying
 import com.sonostv.sonos.Transport
@@ -59,8 +50,6 @@ import com.sonostv.sonos.formatDuration
 import kotlinx.coroutines.delay
 
 private enum class Panel { None, Queue, Rooms }
-
-private val AlbumArtShape = SquircleShape(radius = 22.dp, smoothing = 0.6f)
 
 private const val IdleTimeoutMs = 10_000L
 
@@ -179,12 +168,12 @@ private fun PlayerContent(
     }
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        val artSize = (maxHeight * 0.66f).coerceAtMost(360.dp)
+        val artSize = (maxHeight * 0.58f).coerceAtMost(300.dp)
 
         Box(
             Modifier
                 .fillMaxSize()
-                .padding(start = 56.dp, end = 56.dp, top = 34.dp, bottom = 40.dp),
+                .padding(start = 48.dp, end = 48.dp, top = 28.dp, bottom = 32.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxSize(),
@@ -193,7 +182,7 @@ private fun PlayerContent(
             ) {
                 AlbumArt(artUrl = track?.artUrl, size = artSize)
 
-                Spacer(Modifier.width(48.dp))
+                Spacer(Modifier.width(36.dp))
 
                 // Sized to the control row, so the block is symmetric within the screen
                 // and the artwork doesn't shift as track titles change length.
@@ -206,7 +195,7 @@ private fun PlayerContent(
                         modifier = Modifier.alpha(chromeAlpha),
                     )
 
-                    Spacer(Modifier.height(10.dp))
+                    Spacer(Modifier.height(8.dp))
 
                     Text(
                         text = track?.title ?: "Nothing playing",
@@ -216,7 +205,7 @@ private fun PlayerContent(
                     )
 
                     if (track?.artist != null) {
-                        Spacer(Modifier.height(8.dp))
+                        Spacer(Modifier.height(6.dp))
                         Text(
                             text = track.artist,
                             style = SonosText.Artist,
@@ -226,7 +215,7 @@ private fun PlayerContent(
                     }
 
                     if (track?.album != null) {
-                        Spacer(Modifier.height(4.dp))
+                        Spacer(Modifier.height(2.dp))
                         Text(
                             text = track.album,
                             style = SonosText.Album,
@@ -235,7 +224,7 @@ private fun PlayerContent(
                         )
                     }
 
-                    Spacer(Modifier.height(30.dp))
+                    Spacer(Modifier.height(22.dp))
 
                     // Intrinsic sizing ties the progress bar to the width of the button row.
                     Column(Modifier.width(IntrinsicSize.Min)) {
@@ -245,7 +234,7 @@ private fun PlayerContent(
                             timecodeAlpha = chromeAlpha,
                         )
 
-                        Spacer(Modifier.height(26.dp))
+                        Spacer(Modifier.height(18.dp))
 
                         TransportControls(
                             actions = actions,
@@ -258,37 +247,6 @@ private fun PlayerContent(
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun AlbumArt(artUrl: String?, size: androidx.compose.ui.unit.Dp) {
-    Box(
-        Modifier
-            .size(size)
-            .shadow(36.dp, AlbumArtShape, clip = false)
-            .clip(AlbumArtShape)
-            .background(Color.White.copy(alpha = 0.07f)),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (artUrl != null) {
-            AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(artUrl)
-                    .crossfade(450)
-                    .build(),
-                contentDescription = "Album artwork",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.size(size),
-            )
-        } else {
-            Icon(
-                imageVector = Icons.Rounded.MusicNote,
-                contentDescription = null,
-                tint = Color.White.copy(alpha = 0.22f),
-                modifier = Modifier.size(size * 0.28f),
-            )
         }
     }
 }
@@ -342,7 +300,7 @@ private fun TransportControls(
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         TvIconButton(
             icon = Icons.Rounded.SkipPrevious,
@@ -388,7 +346,7 @@ private fun StatusMessage(message: String, detail: String?, onRetry: (() -> Unit
     }
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(56.dp),
+        modifier = Modifier.fillMaxSize().padding(48.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -396,9 +354,9 @@ private fun StatusMessage(message: String, detail: String?, onRetry: (() -> Unit
             CircularProgressIndicator(
                 color = Color.White.copy(alpha = 0.7f),
                 strokeWidth = 3.dp,
-                modifier = Modifier.size(34.dp),
+                modifier = Modifier.size(28.dp),
             )
-            Spacer(Modifier.height(22.dp))
+            Spacer(Modifier.height(18.dp))
         }
 
         Text(text = message, style = SonosText.Artist.copy(color = SonosColors.Primary))
@@ -409,7 +367,7 @@ private fun StatusMessage(message: String, detail: String?, onRetry: (() -> Unit
         }
 
         if (onRetry != null) {
-            Spacer(Modifier.height(26.dp))
+            Spacer(Modifier.height(20.dp))
             TvIconButton(
                 icon = Icons.Rounded.Refresh,
                 contentDescription = "Search again",

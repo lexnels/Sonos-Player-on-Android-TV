@@ -128,3 +128,9 @@ fun DemoNowPlayingScreen() {
 private fun NowPlayingPreview() {
     SonosTvTheme { DemoNowPlayingScreen() }
 }
+
+@Preview(device = Devices.TV_1080p, showBackground = true)
+@Composable
+private fun ScreensaverPreview() {
+    SonosTvTheme { ScreensaverScreen(DemoData.nowPlaying) }
+}
