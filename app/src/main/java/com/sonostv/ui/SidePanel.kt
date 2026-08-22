@@ -29,6 +29,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.MusicNote
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Speaker
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -80,7 +81,9 @@ fun SidePanel(
                 style = SonosText.PanelHeader,
                 modifier = Modifier.padding(start = 18.dp, bottom = 10.dp),
             )
-            content()
+            Box(Modifier.weight(1f).fillMaxWidth()) {
+                content()
+            }
         }
     }
 }
@@ -133,38 +136,60 @@ fun QueueList(
 }
 
 @Composable
-fun RoomList(groups: List<SonosGroup>, selectedId: String?, onSelect: (SonosGroup) -> Unit) {
+fun RoomList(
+    groups: List<SonosGroup>,
+    selectedId: String?,
+    onSelect: (SonosGroup) -> Unit,
+    onOpenSettings: () -> Unit,
+) {
     val firstItem = remember { FocusRequester() }
 
     LaunchedEffect(groups.isNotEmpty()) {
-        if (groups.isNotEmpty()) runCatching { firstItem.requestFocus() }
+        runCatching { firstItem.requestFocus() }
     }
 
-    if (groups.isEmpty()) {
-        EmptyPanelMessage("No rooms found")
-        return
-    }
-
-    LazyColumn(
-        modifier = Modifier.fillMaxWidth().focusGroup(),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
-        itemsIndexed(groups) { index, group ->
-            PanelRow(
-                primary = group.name,
-                secondary = if (group.members.size > 1) {
-                    group.members.joinToString(", ") { it.name }
-                } else {
-                    null
-                },
-                artUrl = null,
-                placeholderIcon = Icons.Rounded.Speaker,
-                isCurrent = group.id == selectedId,
-                onClick = { onSelect(group) },
-                modifier = if (index == 0) Modifier.focusRequester(firstItem) else Modifier,
-            )
+    Column(Modifier.fillMaxWidth().fillMaxHeight()) {
+        if (groups.isEmpty()) {
+            EmptyPanelMessage("No rooms found")
+            Spacer(Modifier.weight(1f))
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .focusGroup(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                itemsIndexed(groups) { index, group ->
+                    PanelRow(
+                        primary = group.name,
+                        secondary = if (group.members.size > 1) {
+                            group.members.joinToString(", ") { it.name }
+                        } else {
+                            null
+                        },
+                        artUrl = null,
+                        placeholderIcon = Icons.Rounded.Speaker,
+                        isCurrent = group.id == selectedId,
+                        onClick = { onSelect(group) },
+                        modifier = if (index == 0) Modifier.focusRequester(firstItem) else Modifier,
+                    )
+                }
+            }
         }
+
+        PanelRow(
+            primary = "Settings",
+            secondary = null,
+            artUrl = null,
+            placeholderIcon = Icons.Rounded.Settings,
+            isCurrent = false,
+            onClick = onOpenSettings,
+            modifier = Modifier
+                .padding(horizontal = 16.dp)
+                .then(if (groups.isEmpty()) Modifier.focusRequester(firstItem) else Modifier),
+        )
     }
 }
 

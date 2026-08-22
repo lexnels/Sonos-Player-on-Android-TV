@@ -29,7 +29,7 @@ class SonosController private constructor(context: Context) {
 
     private val client = SonosClient()
     private val discovery = SonosDiscovery(context)
-    private val prefs = context.getSharedPreferences("sonos_tv", Context.MODE_PRIVATE)
+    private val prefs = context.getSharedPreferences(AppSettings.PREFS_NAME, Context.MODE_PRIVATE)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     private val _state = MutableStateFlow(NowPlaying())
@@ -109,9 +109,12 @@ class SonosController private constructor(context: Context) {
         _state.update { it.copy(groups = groups, group = chooseGroup(groups), connectionState = ConnectionState.Connected) }
     }
 
-    /** Prefer the room the user last used, then any room that is actually playing something. */
+    /** Prefer a pinned default room, then the last used one, then anything currently playing. */
     private suspend fun chooseGroup(groups: List<SonosGroup>): SonosGroup {
-        val remembered = prefs.getString(KEY_LAST_GROUP, null)
+        val pinned = prefs.getString(AppSettings.KEY_DEFAULT_GROUP, null)
+        groups.firstOrNull { it.coordinator.uuid == pinned }?.let { return it }
+
+        val remembered = prefs.getString(AppSettings.KEY_LAST_GROUP, null)
         groups.firstOrNull { it.coordinator.uuid == remembered }?.let { return it }
 
         val playing = groups.firstOrNull { group ->
@@ -269,7 +272,7 @@ class SonosController private constructor(context: Context) {
     }
 
     fun selectGroup(group: SonosGroup) {
-        prefs.edit().putString(KEY_LAST_GROUP, group.coordinator.uuid).apply()
+        prefs.edit().putString(AppSettings.KEY_LAST_GROUP, group.coordinator.uuid).apply()
         lastQueueSignature = null
         pollCycle = 0
         _state.update { it.copy(group = group, transport = null, queue = emptyList()) }
@@ -290,8 +293,6 @@ class SonosController private constructor(context: Context) {
         private const val MAX_FAILURES = 3
         private const val VOLUME_EVERY = 4
         private const val TOPOLOGY_EVERY = 10
-        private const val KEY_LAST_GROUP = "last_group_uuid"
-
         @Volatile
         private var instance: SonosController? = null
 

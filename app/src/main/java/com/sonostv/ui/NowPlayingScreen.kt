@@ -1,6 +1,7 @@
 package com.sonostv.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
@@ -42,14 +43,17 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sonostv.AppSettings
 import com.sonostv.sonos.ConnectionState
 import com.sonostv.sonos.NowPlaying
 import com.sonostv.sonos.Transport
 import com.sonostv.sonos.formatDuration
 import kotlinx.coroutines.delay
 
-private enum class Panel { None, Queue, Rooms }
+private enum class Panel { None, Queue, Rooms, Settings }
 
 private const val IdleTimeoutMs = 10_000L
 
@@ -61,6 +65,9 @@ fun NowPlayingScreen(
 ) {
     var panel by remember { mutableStateOf(Panel.None) }
     val playButton = remember { FocusRequester() }
+    val context = LocalContext.current
+    val settings = remember { AppSettings.get(context) }
+    val prefs by settings.value.collectAsStateWithLifecycle()
 
     // After a spell with no input the controls fade away, leaving just the artwork.
     var wakeCount by remember { mutableStateOf(0) }
@@ -83,7 +90,15 @@ fun NowPlayingScreen(
         runCatching { playButton.requestFocus() }
     }
 
-    BackHandler(enabled = panel != Panel.None, onBack = ::closePanel)
+    if (LocalOnBackPressedDispatcherOwner.current != null) {
+        BackHandler(enabled = panel != Panel.None) {
+            if (panel == Panel.Settings) {
+                panel = Panel.Rooms
+            } else {
+                closePanel()
+            }
+        }
+    }
 
     Box(
         modifier
@@ -146,6 +161,19 @@ fun NowPlayingScreen(
                     actions.onSelectGroup(group)
                     closePanel()
                 },
+                onOpenSettings = { panel = Panel.Settings },
+            )
+        }
+
+        SidePanel(
+            visible = panel == Panel.Settings,
+            header = "Settings",
+            modifier = Modifier.align(Alignment.CenterEnd),
+        ) {
+            SettingsPanel(
+                groups = state.groups,
+                prefs = prefs,
+                settings = settings,
             )
         }
     }

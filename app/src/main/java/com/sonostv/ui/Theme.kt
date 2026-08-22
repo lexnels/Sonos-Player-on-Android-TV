@@ -3,13 +3,26 @@ package com.sonostv.ui
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sonostv.AppSettings
 import com.sonostv.R
+
+val LocalCornerRadius = compositionLocalOf { 18.dp }
 
 /**
  * A deliberately small palette. The interface is meant to disappear behind the artwork,
@@ -96,14 +109,27 @@ object SonosText {
 
 @Composable
 fun SonosTvTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = darkColorScheme(
-            background = SonosColors.Background,
-            surface = SonosColors.Background,
-            primary = SonosColors.Primary,
-            onBackground = SonosColors.Primary,
-            onSurface = SonosColors.Primary,
+    val context = LocalContext.current
+    val settings = remember { AppSettings.get(context) }
+    val prefs by settings.value.collectAsStateWithLifecycle()
+    val density = LocalDensity.current
+
+    CompositionLocalProvider(
+        LocalDensity provides Density(
+            density = density.density * prefs.uiScale,
+            fontScale = density.fontScale * prefs.uiScale,
         ),
-        content = content,
-    )
+        LocalCornerRadius provides Dp(prefs.cornerRadiusDp),
+    ) {
+        MaterialTheme(
+            colorScheme = darkColorScheme(
+                background = SonosColors.Background,
+                surface = SonosColors.Background,
+                primary = SonosColors.Primary,
+                onBackground = SonosColors.Primary,
+                onSurface = SonosColors.Primary,
+            ),
+            content = content,
+        )
+    }
 }

@@ -31,7 +31,6 @@ import coil.imageLoader
 import coil.request.ImageRequest
 import coil.request.SuccessResult
 
-private val AlbumArtShape = SquircleShape(radius = 18.dp, smoothing = 0.6f)
 private const val ArtFadeMs = 700
 
 /**
@@ -43,7 +42,7 @@ fun AlbumArt(
     artUrl: String?,
     size: Dp,
     modifier: Modifier = Modifier,
-    shape: Shape = AlbumArtShape,
+    shape: Shape = SquircleShape(radius = LocalCornerRadius.current, smoothing = 0.6f),
     contentDescription: String? = "Album artwork",
 ) {
     var shown by remember { mutableStateOf<ImageBitmap?>(null) }
