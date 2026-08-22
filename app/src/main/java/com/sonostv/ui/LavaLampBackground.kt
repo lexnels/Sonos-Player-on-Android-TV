@@ -38,19 +38,19 @@ fun LavaLampBackground(artUrl: String?, modifier: Modifier = Modifier) {
     val t1 by transition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(28_000, easing = LinearEasing), RepeatMode.Restart),
+        animationSpec = infiniteRepeatable(tween(20_000, easing = LinearEasing), RepeatMode.Restart),
         label = "t1",
     )
     val t2 by transition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(34_000, easing = LinearEasing), RepeatMode.Restart),
+        animationSpec = infiniteRepeatable(tween(25_000, easing = LinearEasing), RepeatMode.Restart),
         label = "t2",
     )
     val t3 by transition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(40_000, easing = LinearEasing), RepeatMode.Restart),
+        animationSpec = infiniteRepeatable(tween(30_000, easing = LinearEasing), RepeatMode.Restart),
         label = "t3",
     )
 
@@ -94,13 +94,13 @@ private fun DrawScope.blobCenter(
 )
 
 private fun DrawScope.drawSoftBlob(color: Color, center: Offset, radius: Float) {
-    val c = color.copy(alpha = 0.82f)
+    val c = color.copy(alpha = 0.92f)
     drawRect(
         Brush.radialGradient(
             colorStops = arrayOf(
                 0f to c,
-                0.35f to c.copy(alpha = c.alpha * 0.55f),
-                0.65f to c.copy(alpha = c.alpha * 0.18f),
+                0.30f to c.copy(alpha = c.alpha * 0.65f),
+                0.60f to c.copy(alpha = c.alpha * 0.25f),
                 1f to c.copy(alpha = 0f),
             ),
             center = center,
@@ -112,9 +112,9 @@ private fun DrawScope.drawSoftBlob(color: Color, center: Offset, radius: Float) 
 private fun DrawScope.drawReadabilityOverlay() {
     drawRect(
         Brush.verticalGradient(
-            0f to Color.Black.copy(alpha = 0.30f),
-            0.55f to Color.Black.copy(alpha = 0.45f),
-            1f to Color.Black.copy(alpha = 0.78f),
+            0f to Color.Black.copy(alpha = 0.22f),
+            0.55f to Color.Black.copy(alpha = 0.38f),
+            1f to Color.Black.copy(alpha = 0.72f),
         ),
     )
 }
