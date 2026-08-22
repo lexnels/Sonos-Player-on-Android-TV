@@ -14,7 +14,7 @@ A full-screen now-playing screen for **Android TV** and **Google TV**. Put on a 
 
 It finds your Sonos speakers on your home Wi-Fi. You do not need a Sonos account, and this is not an official Sonos app.
 
-**Version 1.4**
+**Version 1.5**
 
 <p align="center">
   <img src="docs/screenshots/now-playing.png" alt="Now playing on the TV: album art, song title, and playback buttons" width="800">
@@ -40,9 +40,11 @@ Your TV and your Sonos speakers must be on the **same Wi-Fi**. Guest networks an
 
 This project is not affiliated with Sonos, Inc.
 
+**Privacy:** No account, no cloud, no analytics. The app only talks to your Sonos speakers on your home network. Settings are stored on the TV.
+
 ## Install it on your TV
 
-The install file is an **APK**. Grab the latest one from the [releases folder](releases/) — use the file whose name ends in **`-release.apk`**.
+The install file is an **APK**. Grab the latest from **[GitHub Releases](https://github.com/lexnels/sonos-android-tv/releases/latest)** (or the [releases folder](releases/) in this repo) — use the file whose name ends in **`-release.apk`**.
 
 ### Send it with LocalSend (easiest)
 
@@ -125,3 +127,9 @@ Both buttons use the same media session; **Stop** never needs to open a window, 
 ## How this was made
 
 I'm a designer and front-end developer by trade. I use AI-assisted coding tools to develop this app.
+
+## License and feedback
+
+Source code is [MIT licensed](LICENSE). The Figtree font is under the [SIL Open Font License](LICENSE-Figtree.txt).
+
+Found a bug or have an idea? [Open an issue](https://github.com/lexnels/sonos-android-tv/issues).

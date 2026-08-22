@@ -154,18 +154,8 @@ class MainActivity : ComponentActivity() {
                 true
             }
 
-            KeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> {
-                if (event.action == KeyEvent.ACTION_DOWN) viewModel.skip(SKIP_MS)
-                true
-            }
-
             KeyEvent.KEYCODE_MEDIA_PREVIOUS -> {
                 if (event.action == KeyEvent.ACTION_DOWN) viewModel.previous()
-                true
-            }
-
-            KeyEvent.KEYCODE_MEDIA_REWIND -> {
-                if (event.action == KeyEvent.ACTION_DOWN) viewModel.skip(-SKIP_MS)
                 true
             }
 
@@ -187,6 +177,5 @@ class MainActivity : ComponentActivity() {
 
     private companion object {
         const val VOLUME_STEP = 4
-        const val SKIP_MS = 15_000L
     }
 }

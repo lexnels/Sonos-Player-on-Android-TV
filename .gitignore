@@ -15,4 +15,6 @@ local.properties
 keystore.properties
 *.apk
 !releases/
-!releases/*.apk
+!releases/*-release.apk
+
+.cursor/

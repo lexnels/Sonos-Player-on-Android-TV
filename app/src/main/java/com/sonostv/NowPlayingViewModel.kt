@@ -34,7 +34,6 @@ class NowPlayingViewModel(application: Application) : AndroidViewModel(applicati
     fun next() = controller.next()
     fun previous() = controller.previous()
     fun seekTo(positionMs: Long) = controller.seekTo(positionMs)
-    fun skip(deltaMs: Long) = controller.skip(deltaMs)
     fun adjustVolume(delta: Int) = controller.adjustVolume(delta)
     fun toggleMute() = controller.toggleMute()
     fun playQueueItem(index: Int) = controller.playQueueItem(index)

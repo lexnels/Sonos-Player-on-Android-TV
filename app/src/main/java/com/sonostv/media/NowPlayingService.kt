@@ -320,8 +320,6 @@ class NowPlayingService : Service() {
         override fun onSkipToNext() = controller.next()
         override fun onSkipToPrevious() = controller.previous()
         override fun onSeekTo(pos: Long) = controller.seekTo(pos)
-        override fun onFastForward() = controller.skip(SKIP_MS)
-        override fun onRewind() = controller.skip(-SKIP_MS)
         override fun onStop() {
             controller.pause()
             shouldKeepSessionAlive = false
@@ -336,7 +334,6 @@ class NowPlayingService : Service() {
         private const val ART_SIZE = 512
         private const val PLAYBACK_RESYNC_MS = 5_000L
         private const val POSITION_DRIFT_MS = 2_000L
-        private const val SKIP_MS = 15_000L
 
         /** True while the session advertises playable content (now-playing card visible). */
         @Volatile
@@ -349,8 +346,6 @@ class NowPlayingService : Service() {
             PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
             PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
             PlaybackStateCompat.ACTION_SEEK_TO or
-            PlaybackStateCompat.ACTION_FAST_FORWARD or
-            PlaybackStateCompat.ACTION_REWIND or
             PlaybackStateCompat.ACTION_STOP
 
         fun start(context: Context) {

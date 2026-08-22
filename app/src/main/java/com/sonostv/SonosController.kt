@@ -241,12 +241,6 @@ class SonosController private constructor(context: Context) {
         },
     ) { host -> client.seekToMillis(host, positionMs) }
 
-    fun skip(deltaMs: Long) {
-        val transport = _state.value.transport ?: return
-        if (transport.isStream || transport.durationMs <= 0) return
-        seekTo((transport.positionMs + deltaMs).coerceIn(0, transport.durationMs))
-    }
-
     fun adjustVolume(delta: Int) {
         val optimistic = (_state.value.volume + delta).coerceIn(0, 100)
         _state.update { it.copy(volume = optimistic, muted = false) }

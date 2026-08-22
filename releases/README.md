@@ -1,6 +1,6 @@
 # Download the app
 
-This folder holds the install files (APKs) for the current version.
+This folder holds the install files (APKs) for the current version. You can also download from **[GitHub Releases](https://github.com/lexnels/sonos-android-tv/releases/latest)**.
 
 **You want the file that ends with `-release.apk`.** That is the one to put on your TV.
 
