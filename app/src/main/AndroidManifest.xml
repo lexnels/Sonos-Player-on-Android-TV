@@ -28,18 +28,12 @@
         android:theme="@style/Theme.SonosTV">
 
         <activity
-            android:name=".media.SessionLaunchActivity"
-            android:exported="false"
-            android:excludeFromRecents="true"
-            android:launchMode="singleTop"
-            android:taskAffinity="com.sonostv.session.launch"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
-
-        <activity
             android:name=".MainActivity"
             android:banner="@drawable/app_banner"
             android:exported="true"
             android:launchMode="singleTask"
+            android:resizeableActivity="true"
+            android:supportsPictureInPicture="true"
             android:screenOrientation="landscape"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
             android:theme="@style/Theme.SonosTV">
@@ -48,6 +42,10 @@
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- TV PiP is only allowed for approved categories; ticker covers now-playing. -->
+            <meta-data
+                android:name="com.google.android.tv.pip.category"
+                android:value="ticker" />
         </activity>
 
         <!-- Publishes the Sonos transport as a system media session, which is what
@@ -93,6 +91,14 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".media.OpenAppReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.sonostv.action.OPEN_APP" />
             </intent-filter>
         </receiver>
     </application>

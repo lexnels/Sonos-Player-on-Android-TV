@@ -1,6 +1,5 @@
 package com.sonostv.media
 
-import android.app.ActivityOptions
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -100,7 +99,7 @@ class NowPlayingService : Service() {
         session.isActive = false
         session.release()
         shouldKeepSessionAlive = false
-        SessionLaunchActivity.dismiss()
+        SessionLaunchHelper.exitPipKeeper()
         super.onDestroy()
     }
 
@@ -123,7 +122,7 @@ class NowPlayingService : Service() {
         val hasContent = track?.isEmpty == false
         if (session.isActive != hasContent) session.isActive = hasContent
         shouldKeepSessionAlive = hasContent
-        if (!hasContent) SessionLaunchActivity.dismiss()
+        if (!hasContent) SessionLaunchHelper.exitPipKeeper()
 
         val playbackState = when (transport?.state) {
             PlayState.PLAYING -> PlaybackStateCompat.STATE_PLAYING
@@ -300,38 +299,7 @@ class NowPlayingService : Service() {
     private fun mediaAction(action: Long): PendingIntent =
         MediaButtonReceiver.buildMediaButtonPendingIntent(this, action)
 
-    /**
-     * The intent behind "Open" in launcher now-playing panels, and behind tapping the
-     * notification.
-     *
-     * Google TV's home screen sends this from the launcher while we only have a
-     * foreground service, so Android 14+ treats it as a background activity start.
-     * The trampoline task plus creator/sender BAL opt-in on the [PendingIntent] is what
-     * lets the launch succeed on current Google TV builds.
-     */
-    private fun buildOpenAppIntent(): PendingIntent {
-        val intent = Intent(this, SessionLaunchActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
-        }
-        val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        return PendingIntent.getActivity(this, REQUEST_OPEN_APP, intent, flags, activityStartOptions())
-    }
-
-    private fun activityStartOptions(): android.os.Bundle? {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return null
-        val options = ActivityOptions.makeBasic()
-        options.setPendingIntentCreatorBackgroundActivityStartMode(backgroundActivityStartMode())
-        return options.toBundle()
-    }
-
-    /**
-     * ALLOW_ALWAYS (4) is required for TV launcher Open on API 36+. On 34–35 use ALLOWED;
-     * passing ALLOW_ALWAYS below 36 crashes at PendingIntent creation time.
-     */
-    private fun backgroundActivityStartMode(): Int = when {
-        Build.VERSION.SDK_INT >= 36 -> 4 // MODE_BACKGROUND_ACTIVITY_START_ALLOW_ALWAYS
-        else -> ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
-    }
+    private fun buildOpenAppIntent(): PendingIntent = SessionLaunchHelper.buildOpenIntent(this)
 
     private fun createChannel() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
@@ -357,7 +325,7 @@ class NowPlayingService : Service() {
         override fun onStop() {
             controller.pause()
             shouldKeepSessionAlive = false
-            SessionLaunchActivity.dismiss()
+            SessionLaunchHelper.exitPipKeeper()
             stopSelf()
         }
     }
@@ -365,7 +333,6 @@ class NowPlayingService : Service() {
     companion object {
         private const val CHANNEL_ID = "now_playing"
         private const val NOTIFICATION_ID = 1
-        private const val REQUEST_OPEN_APP = 100
         private const val ART_SIZE = 512
         private const val PLAYBACK_RESYNC_MS = 5_000L
         private const val POSITION_DRIFT_MS = 2_000L

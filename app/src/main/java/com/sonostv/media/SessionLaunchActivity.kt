@@ -1,98 +1,142 @@
 package com.sonostv.media
 
 import android.app.Activity
+import android.app.PendingIntent
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.os.Bundle
 import android.util.Log
-import android.view.WindowManager
+import android.util.Rational
 import com.sonostv.MainActivity
 
 /**
- * Trampoline for the TV now-playing "Open" action, plus a transparent background
- * "keeper" window while music plays.
+ * PiP keeper and Open [PendingIntent] for the TV now-playing card.
  *
- * Android 14+ blocks background activity launches when the app only has a foreground
- * service (`callingUidHasAnyVisibleWindow: false`). Stop/play work via [MediaSession]
- * callbacks; Open fires a [PendingIntent] to start an activity and is silently blocked.
+ * On API 34–35 the launcher blocks background activity starts unless the app has a
+ * visible window. TV only allows PiP for approved categories (we use `ticker` for
+ * now-playing); [MainActivity] auto-enters PiP on Home so Open can expand the tile.
  *
- * While the user is on the home screen we keep this activity alive in a separate,
- * touch-through, invisible task so the process retains a visible window. Open then
- * delivers [onNewIntent] here and we can start [MainActivity] from a foreground context.
+ * Open uses a broadcast [PendingIntent] with background-start opt-in because
+ * `getActivity` alone is still blocked when invoked by the TV launcher.
  */
-class SessionLaunchActivity : Activity() {
+object SessionLaunchHelper {
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        instance = this
-        if (intent.getBooleanExtra(EXTRA_KEEPER, false)) {
-            Log.i(TAG, "keeper started")
-            window.addFlags(
-                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
-                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-            )
+    private const val TAG = "SonosTV/Open"
+    private const val REQUEST_OPEN_APP = 102
+    const val ACTION_OPEN_APP = "com.sonostv.action.OPEN_APP"
+
+    /** True while [MainActivity] is in PiP keeping a visible window for BAL on API 34–35. */
+    @Volatile
+    var pipKeeperActive: Boolean = false
+
+    /**
+     * BAL mode for PendingIntent / activity starts from the now-playing Open action.
+     * See [android.app.ActivityOptions] — ALLOW_ALWAYS (4) needs API 36+.
+     */
+    fun balStartMode(): Int = when {
+        Build.VERSION.SDK_INT >= 36 -> 4 // MODE_BACKGROUND_ACTIVITY_START_ALLOW_ALWAYS
+        Build.VERSION.SDK_INT >= 35 -> 3 // MODE_BACKGROUND_ACTIVITY_START_ALLOW_IF_VISIBLE
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE ->
+            android.app.ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+        else -> 0
+    }
+
+    fun configurePip(activity: Activity) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        if (!activity.packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE)) {
+            Log.w(TAG, "PiP not supported on this device")
             return
         }
-        openMain()
-    }
-
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        setIntent(intent)
-        if (!intent.getBooleanExtra(EXTRA_KEEPER, false)) {
-            Log.i(TAG, "Open delivered via onNewIntent")
-            openMain()
+        try {
+            val params = android.app.PictureInPictureParams.Builder()
+                .setAspectRatio(Rational(16, 9))
+                .apply {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        setAutoEnterEnabled(true)
+                        setSeamlessResizeEnabled(true)
+                    }
+                }
+                .build()
+            activity.setPictureInPictureParams(params)
+            Log.i(TAG, "PiP params set (auto-enter=${Build.VERSION.SDK_INT >= Build.VERSION_CODES.S})")
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to set PiP params", e)
         }
     }
 
-    override fun onDestroy() {
-        if (instance === this) instance = null
-        super.onDestroy()
-    }
-
-    private fun openMain() {
-        startActivity(
-            Intent(this, MainActivity::class.java).apply {
-                action = Intent.ACTION_MAIN
-                addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER)
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                    Intent.FLAG_ACTIVITY_SINGLE_TOP
-            },
-        )
-        finish()
-    }
-
-    companion object {
-        private const val TAG = "SonosTV/Open"
-        private const val EXTRA_KEEPER = "keeper"
-
-        @Volatile
-        private var instance: SessionLaunchActivity? = null
-
-        val isKeeperRunning: Boolean get() = instance != null
-
-        /** Only needed on API 34+ where TV launchers block background Open. */
-        fun startKeeper(context: Context) {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return
-            if (!NowPlayingService.shouldKeepSessionAlive) {
-                Log.i(TAG, "keeper skipped: no session content")
-                return
+    fun enterPipKeeper(activity: Activity) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        if (Build.VERSION.SDK_INT >= 36) return
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return
+        if (!NowPlayingService.shouldKeepSessionAlive) {
+            Log.d(TAG, "skip PiP: no session content")
+            return
+        }
+        if (pipKeeperActive || activity.isInPictureInPictureMode) return
+        if (!activity.packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE)) {
+            Log.w(TAG, "skip PiP: FEATURE_PICTURE_IN_PICTURE missing")
+            return
+        }
+        try {
+            Log.i(TAG, "entering PiP keeper")
+            val entered = activity.enterPictureInPictureMode(
+                android.app.PictureInPictureParams.Builder()
+                    .setAspectRatio(Rational(16, 9))
+                    .apply {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            setAutoEnterEnabled(true)
+                        }
+                    }
+                    .build(),
+            )
+            if (entered) {
+                pipKeeperActive = true
+            } else {
+                Log.w(TAG, "enterPictureInPictureMode returned false")
             }
-            if (instance != null) return
-            Log.i(TAG, "starting keeper")
-            context.startActivity(
-                Intent(context, SessionLaunchActivity::class.java).apply {
-                    putExtra(EXTRA_KEEPER, true)
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_ANIMATION
-                },
+        } catch (e: IllegalStateException) {
+            Log.w(TAG, "PiP keeper unavailable", e)
+        }
+    }
+
+    fun exitPipKeeper() {
+        pipKeeperActive = false
+    }
+
+    fun buildOpenIntent(context: Context): PendingIntent {
+        val intent = Intent(context, OpenAppReceiver::class.java).apply {
+            action = ACTION_OPEN_APP
+            setPackage(context.packageName)
+        }
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        return PendingIntent.getBroadcast(context, REQUEST_OPEN_APP, intent, flags)
+    }
+}
+
+/** Handles the TV now-playing card Open action. */
+class OpenAppReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent?) {
+        if (intent?.action != SessionLaunchHelper.ACTION_OPEN_APP) return
+        Log.i(TAG, "OpenAppReceiver fired")
+        val launch = Intent(context, MainActivity::class.java).apply {
+            addFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                    Intent.FLAG_ACTIVITY_REORDER_TO_FRONT,
             )
         }
-
-        fun dismiss() {
-            instance?.finish()
-            instance = null
+        val options = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            android.app.ActivityOptions.makeBasic().apply {
+                setPendingIntentCreatorBackgroundActivityStartMode(SessionLaunchHelper.balStartMode())
+            }.toBundle()
+        } else {
+            null
         }
+        context.startActivity(launch, options)
+    }
+
+    private companion object {
+        private const val TAG = "SonosTV/Open"
     }
 }
