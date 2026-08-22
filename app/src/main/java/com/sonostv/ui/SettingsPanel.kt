@@ -54,6 +54,7 @@ import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter
 import com.sonostv.AppSettings
+import com.sonostv.BackgroundStyle
 import com.sonostv.UiPrefs
 import com.sonostv.sonos.SonosGroup
 
@@ -103,6 +104,18 @@ fun SettingsPanel(
             valueText = "${prefs.cornerRadiusDp.toInt()} dp",
             onStep = { direction ->
                 settings.setCornerRadius(prefs.cornerRadiusDp + direction * 2f)
+            },
+        )
+        SettingStepper(
+            label = "Background",
+            valueText = when (prefs.backgroundStyle) {
+                BackgroundStyle.Ambient -> "Ambient"
+                BackgroundStyle.LavaLamp -> "Lava lamp"
+            },
+            onStep = { direction ->
+                val styles = BackgroundStyle.entries
+                val index = styles.indexOf(prefs.backgroundStyle).coerceAtLeast(0)
+                settings.setBackgroundStyle(styles[(index + direction).mod(styles.size)])
             },
         )
         SettingStepper(

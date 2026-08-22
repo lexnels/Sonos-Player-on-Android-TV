@@ -49,6 +49,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sonostv.AppSettings
+import com.sonostv.BackgroundStyle
 import com.sonostv.sonos.ConnectionState
 import com.sonostv.sonos.NowPlaying
 import com.sonostv.sonos.Transport
@@ -113,7 +114,10 @@ fun NowPlayingScreen(
                 wasIdle
             },
     ) {
-        AmbientBackground(state.transport?.track?.artUrl)
+        when (prefs.backgroundStyle) {
+            BackgroundStyle.Ambient -> AmbientBackground(state.transport?.track?.artUrl)
+            BackgroundStyle.LavaLamp -> LavaLampBackground(state.transport?.track?.artUrl)
+        }
 
         when {
             state.connectionState is ConnectionState.Failed && state.group == null ->

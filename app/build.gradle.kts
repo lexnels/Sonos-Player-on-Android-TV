@@ -16,13 +16,13 @@ val keystoreProperties = Properties().apply {
 
 android {
     namespace = "com.sonostv"
-    compileSdk = 34
-    buildToolsVersion = "34.0.0"
+        compileSdk = 34
+        buildToolsVersion = "34.0.0"
 
-    defaultConfig {
-        applicationId = "com.sonostv"
-        minSdk = 23
-        targetSdk = 34
+        defaultConfig {
+            applicationId = "com.sonostv"
+            minSdk = 23
+            targetSdk = 35
         versionCode = 4
         versionName = "1.3"
     }

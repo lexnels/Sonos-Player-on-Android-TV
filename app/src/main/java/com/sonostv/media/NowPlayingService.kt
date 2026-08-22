@@ -27,6 +27,7 @@ import com.sonostv.R
 import com.sonostv.SonosController
 import com.sonostv.sonos.NowPlaying
 import com.sonostv.sonos.PlayState
+import com.sonostv.ui.DemoData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -59,27 +60,35 @@ class NowPlayingService : Service() {
     private var lastPlaybackPosition = 0L
     private var lastPlaybackPublishedAt = 0L
     private var startedForeground = false
-
-    private var openAppIntent: PendingIntent? = null
+    private var sessionDemo = false
 
     override fun onCreate() {
         super.onCreate()
         createChannel()
         session = MediaSessionCompat(this, "SonosTV").apply {
             setCallback(SessionCallback())
-            setSessionActivity(buildOpenAppIntent())
             isActive = true
         }
 
         controller.acquire()
         scope.launch {
-            controller.state.collect { state -> publish(state) }
+            controller.state.collect { state ->
+                if (!sessionDemo) publish(state)
+            }
         }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         MediaButtonReceiver.handleIntent(session, intent)
-        if (!startedForeground) startForeground(buildNotification(controller.state.value))
+        if (intent?.getBooleanExtra(EXTRA_SESSION_DEMO, false) == true) {
+            sessionDemo = true
+            publish(DemoData.nowPlaying)
+        }
+        if (!startedForeground) {
+            startForeground(buildNotification(
+                if (sessionDemo) DemoData.nowPlaying else controller.state.value,
+            ))
+        }
         return START_STICKY
     }
 
@@ -90,6 +99,8 @@ class NowPlayingService : Service() {
         controller.release()
         session.isActive = false
         session.release()
+        shouldKeepSessionAlive = false
+        SessionLaunchActivity.dismiss()
         super.onDestroy()
     }
 
@@ -111,6 +122,8 @@ class NowPlayingService : Service() {
         // drops out of the launcher instead of showing an empty card.
         val hasContent = track?.isEmpty == false
         if (session.isActive != hasContent) session.isActive = hasContent
+        shouldKeepSessionAlive = hasContent
+        if (!hasContent) SessionLaunchActivity.dismiss()
 
         val playbackState = when (transport?.state) {
             PlayState.PLAYING -> PlaybackStateCompat.STATE_PLAYING
@@ -218,6 +231,9 @@ class NowPlayingService : Service() {
             }.isSuccess
             if (started) {
                 startedForeground = true
+                // Publish session activity only after the notification exists; TV launchers
+                // read the PendingIntent from the posted notification / media session pair.
+                session.setSessionActivity(buildOpenAppIntent())
                 return
             }
         }
@@ -294,34 +310,27 @@ class NowPlayingService : Service() {
      * lets the launch succeed on current Google TV builds.
      */
     private fun buildOpenAppIntent(): PendingIntent {
-        openAppIntent?.let { return it }
-
         val intent = Intent(this, SessionLaunchActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
         val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        openAppIntent = PendingIntent.getActivity(this, REQUEST_OPEN_APP, intent, flags, activityStartOptions())
-        return openAppIntent!!
+        return PendingIntent.getActivity(this, REQUEST_OPEN_APP, intent, flags, activityStartOptions())
     }
 
     private fun activityStartOptions(): android.os.Bundle? {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return null
-        val mode = backgroundActivityStartMode()
-        return ActivityOptions.makeBasic()
-            .setPendingIntentCreatorBackgroundActivityStartMode(mode)
-            .setPendingIntentBackgroundActivityStartMode(mode)
-            .toBundle()
+        val options = ActivityOptions.makeBasic()
+        options.setPendingIntentCreatorBackgroundActivityStartMode(backgroundActivityStartMode())
+        return options.toBundle()
     }
 
     /**
-     * ALLOW_ALWAYS (4) is required to open from the Google TV now-playing card, but it
-     * is only accepted from API 36. On 34–35 use ALLOWED so service startup does not crash.
+     * ALLOW_ALWAYS (4) is required for TV launcher Open on API 36+. On 34–35 use ALLOWED;
+     * passing ALLOW_ALWAYS below 36 crashes at PendingIntent creation time.
      */
     private fun backgroundActivityStartMode(): Int = when {
         Build.VERSION.SDK_INT >= 36 -> 4 // MODE_BACKGROUND_ACTIVITY_START_ALLOW_ALWAYS
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE ->
-            ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
-        else -> 0
+        else -> ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
     }
 
     private fun createChannel() {
@@ -347,6 +356,8 @@ class NowPlayingService : Service() {
         override fun onRewind() = controller.skip(-SKIP_MS)
         override fun onStop() {
             controller.pause()
+            shouldKeepSessionAlive = false
+            SessionLaunchActivity.dismiss()
             stopSelf()
         }
     }
@@ -359,6 +370,11 @@ class NowPlayingService : Service() {
         private const val PLAYBACK_RESYNC_MS = 5_000L
         private const val POSITION_DRIFT_MS = 2_000L
         private const val SKIP_MS = 15_000L
+
+        /** True while the session advertises playable content (now-playing card visible). */
+        @Volatile
+        var shouldKeepSessionAlive: Boolean = false
+            private set
 
         private const val ACTIONS = PlaybackStateCompat.ACTION_PLAY or
             PlaybackStateCompat.ACTION_PAUSE or
@@ -378,5 +394,18 @@ class NowPlayingService : Service() {
                 context.startService(intent)
             }
         }
+
+        /** Emulator/debug: fake now-playing metadata without Sonos on the network. */
+        fun startSessionDemo(context: Context) {
+            val intent = Intent(context, NowPlayingService::class.java)
+                .putExtra(EXTRA_SESSION_DEMO, true)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
+        }
+
+        private const val EXTRA_SESSION_DEMO = "session_demo"
     }
 }

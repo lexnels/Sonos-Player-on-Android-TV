@@ -31,7 +31,7 @@
             android:name=".media.SessionLaunchActivity"
             android:exported="false"
             android:excludeFromRecents="true"
-            android:noHistory="true"
+            android:launchMode="singleTop"
             android:taskAffinity="com.sonostv.session.launch"
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 

@@ -17,6 +17,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sonostv.media.NowPlayingService
+import com.sonostv.media.SessionLaunchActivity
 import com.sonostv.ui.DemoNowPlayingScreen
 import com.sonostv.ui.NowPlayingScreen
 import com.sonostv.ui.PlayerActions
@@ -44,6 +45,8 @@ class MainActivity : ComponentActivity() {
         if (!demoMode) {
             requestNotificationPermission()
             NowPlayingService.start(this)
+        } else if (intent?.getBooleanExtra("session_demo", false) == true) {
+            NowPlayingService.startSessionDemo(this)
         }
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -84,13 +87,25 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        SessionLaunchActivity.dismiss()
         if (!demoMode) viewModel.start()
     }
 
     override fun onPause() {
+        if (!isFinishing && shouldStartKeeper()) {
+            SessionLaunchActivity.startKeeper(this)
+        }
         if (!demoMode) viewModel.stop()
         super.onPause()
     }
+
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        if (shouldStartKeeper()) SessionLaunchActivity.startKeeper(this)
+    }
+
+    private fun shouldStartKeeper(): Boolean =
+        !demoMode || intent?.getBooleanExtra("session_demo", false) == true
 
     /**
      * Route the remote's media and volume keys to Sonos rather than to this device,
@@ -125,13 +140,23 @@ class MainActivity : ComponentActivity() {
                 true
             }
 
-            KeyEvent.KEYCODE_MEDIA_NEXT, KeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> {
+            KeyEvent.KEYCODE_MEDIA_NEXT -> {
                 if (event.action == KeyEvent.ACTION_DOWN) viewModel.next()
                 true
             }
 
-            KeyEvent.KEYCODE_MEDIA_PREVIOUS, KeyEvent.KEYCODE_MEDIA_REWIND -> {
+            KeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> {
+                if (event.action == KeyEvent.ACTION_DOWN) viewModel.skip(SKIP_MS)
+                true
+            }
+
+            KeyEvent.KEYCODE_MEDIA_PREVIOUS -> {
                 if (event.action == KeyEvent.ACTION_DOWN) viewModel.previous()
+                true
+            }
+
+            KeyEvent.KEYCODE_MEDIA_REWIND -> {
+                if (event.action == KeyEvent.ACTION_DOWN) viewModel.skip(-SKIP_MS)
                 true
             }
 
@@ -153,5 +178,6 @@ class MainActivity : ComponentActivity() {
 
     private companion object {
         const val VOLUME_STEP = 4
+        const val SKIP_MS = 15_000L
     }
 }
