@@ -24,6 +24,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
@@ -40,9 +42,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
@@ -56,6 +60,7 @@ import com.sonostv.sonos.Track
 
 private val PanelWidth = 280.dp
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun SidePanel(
     visible: Boolean,
@@ -74,6 +79,8 @@ fun SidePanel(
                 .width(PanelWidth)
                 .fillMaxHeight()
                 .background(SonosColors.PanelBackground)
+                .focusGroup()
+                .focusProperties { exit = { FocusRequester.Cancel } }
                 .padding(top = 24.dp, bottom = 18.dp),
         ) {
             Text(
@@ -135,6 +142,7 @@ fun QueueList(
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun RoomList(
     groups: List<SonosGroup>,
@@ -142,26 +150,37 @@ fun RoomList(
     onSelect: (SonosGroup) -> Unit,
     onOpenSettings: () -> Unit,
 ) {
-    val firstItem = remember { FocusRequester() }
+    val roomFocus = remember(groups.size) { List(groups.size) { FocusRequester() } }
+    val settingsFocus = remember { FocusRequester() }
 
-    LaunchedEffect(groups.isNotEmpty()) {
-        runCatching { firstItem.requestFocus() }
+    LaunchedEffect(groups.size) {
+        runCatching {
+            (roomFocus.firstOrNull() ?: settingsFocus).requestFocus()
+        }
     }
 
-    Column(Modifier.fillMaxWidth().fillMaxHeight()) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .fillMaxHeight()
+            .focusGroup()
+            .focusProperties { exit = { FocusRequester.Cancel } },
+    ) {
         if (groups.isEmpty()) {
             EmptyPanelMessage("No rooms found")
             Spacer(Modifier.weight(1f))
         } else {
-            LazyColumn(
+            Column(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .focusGroup(),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
-                itemsIndexed(groups) { index, group ->
+                groups.forEachIndexed { index, group ->
+                    val isFirst = index == 0
+                    val isLast = index == groups.lastIndex
                     PanelRow(
                         primary = group.name,
                         secondary = if (group.members.size > 1) {
@@ -173,7 +192,12 @@ fun RoomList(
                         placeholderIcon = Icons.Rounded.Speaker,
                         isCurrent = group.id == selectedId,
                         onClick = { onSelect(group) },
-                        modifier = if (index == 0) Modifier.focusRequester(firstItem) else Modifier,
+                        modifier = Modifier
+                            .focusRequester(roomFocus[index])
+                            .focusProperties {
+                                if (isFirst) up = FocusRequester.Cancel
+                                if (isLast) down = settingsFocus
+                            },
                     )
                 }
             }
@@ -188,7 +212,11 @@ fun RoomList(
             onClick = onOpenSettings,
             modifier = Modifier
                 .padding(horizontal = 16.dp)
-                .then(if (groups.isEmpty()) Modifier.focusRequester(firstItem) else Modifier),
+                .focusRequester(settingsFocus)
+                .focusProperties {
+                    up = roomFocus.lastOrNull() ?: FocusRequester.Cancel
+                    down = FocusRequester.Cancel
+                },
         )
     }
 }

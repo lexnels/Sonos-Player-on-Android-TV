@@ -38,7 +38,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
@@ -270,7 +272,11 @@ private fun PlayerContent(
                             playButton = playButton,
                             onOpenQueue = onOpenQueue,
                             onOpenRooms = onOpenRooms,
-                            modifier = Modifier.alpha(chromeAlpha),
+                            modifier = Modifier.graphicsLayer {
+                                alpha = chromeAlpha
+                                clip = false
+                                compositingStrategy = CompositingStrategy.ModulateAlpha
+                            },
                         )
                     }
                 }

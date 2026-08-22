@@ -67,10 +67,6 @@ class NowPlayingService : Service() {
         session = MediaSessionCompat(this, "SonosTV").apply {
             setCallback(SessionCallback())
             setSessionActivity(openAppIntent())
-            setFlags(
-                MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or
-                    MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS,
-            )
             isActive = true
         }
 
