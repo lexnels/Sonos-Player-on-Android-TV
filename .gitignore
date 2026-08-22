@@ -9,7 +9,10 @@ captures/
 .cxx
 local.properties
 
-# Signing material and built artefacts stay out of version control
+# Signing material stays out of version control. Built APKs are ignored
+# everywhere except releases/, which holds the current installable builds.
 *.keystore
 keystore.properties
 *.apk
+!releases/
+!releases/*.apk

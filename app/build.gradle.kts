@@ -52,6 +52,23 @@ android {
             val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
             output.outputFileName = "SonosTV-${variant.versionName}(${variant.versionCode})-${variant.name}.apk"
         }
+
+        val capitalized = variant.name.replaceFirstChar { it.titlecase() }
+        val copyApk = tasks.register("copy${capitalized}ApkToReleases") {
+            dependsOn(variant.packageApplicationProvider)
+            doLast {
+                val dest = rootProject.file("releases").apply { mkdirs() }
+                dest.listFiles()
+                    ?.filter { it.isFile && it.name.endsWith("-${variant.name}.apk") }
+                    ?.forEach { it.delete() }
+                variant.outputs.forEach { output ->
+                    val apk = output.outputFile
+                    check(apk.exists()) { "Expected packaged APK at ${apk.absolutePath}" }
+                    apk.copyTo(dest.resolve(apk.name), overwrite = true)
+                }
+            }
+        }
+        tasks.named("package$capitalized").configure { finalizedBy(copyApk) }
     }
 
     compileOptions {
