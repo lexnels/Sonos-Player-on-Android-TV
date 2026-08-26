@@ -14,7 +14,7 @@ A full-screen now-playing screen for **Android TV** and **Google TV**. Put on a 
 
 It finds your Sonos speakers on your home Wi-Fi. You do not need a Sonos account, and this is not an official Sonos app.
 
-**Version 1.5**
+**Version 1.6**
 
 <p align="center">
   <img src="docs/screenshots/now-playing.png" alt="Now playing on the TV: album art, song title, and playback buttons" width="800">

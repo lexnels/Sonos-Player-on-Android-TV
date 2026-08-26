@@ -5,7 +5,12 @@ import android.view.KeyEvent
 import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.OnBackPressedDispatcherOwner
 import androidx.activity.setViewTreeOnBackPressedDispatcherOwner
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -34,10 +39,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
 /**
- * The system screensaver, shown when the TV goes idle. It draws the same now-playing
- * screen as the app, including the controls. It only claims the screen while Sonos is
- * actually playing; with the music stopped it steps aside so the TV does whatever it
- * would normally do when left alone.
+ * The system screensaver, shown when the TV goes idle. While a track is present it
+ * draws the same now-playing screen as the app. With nothing playing it stays black
+ * until playback appears, then steps aside so the TV can idle as usual.
  *
  * Back closes a side panel first, then dismisses the screensaver. [DreamService] is a
  * plain service, so the Compose plumbing an activity normally provides — a lifecycle, a
@@ -97,7 +101,11 @@ class ScreensaverDreamService :
                 setContent {
                     SonosTvTheme {
                         val state by controller.state.collectAsStateWithLifecycle()
-                        NowPlayingScreen(state = state, actions = actions)
+                        if (state.transport?.track?.isEmpty == false) {
+                            NowPlayingScreen(state = state, actions = actions)
+                        } else {
+                            Box(Modifier.fillMaxSize().background(Color.Black))
+                        }
                     }
                 }
             },

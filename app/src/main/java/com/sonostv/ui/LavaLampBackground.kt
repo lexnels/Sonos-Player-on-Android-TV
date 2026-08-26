@@ -78,6 +78,7 @@ fun LavaLampBackground(artUrl: String?, modifier: Modifier = Modifier) {
                 )
 
                 drawReadabilityOverlay()
+                drawNoise()
             },
     )
 }

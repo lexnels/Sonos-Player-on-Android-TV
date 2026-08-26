@@ -6,9 +6,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.MusicNote
-import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -19,7 +16,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Shape
@@ -42,7 +38,7 @@ private const val ArtFadeMs = 700
 
 /**
  * Cover art that keeps the last successful bitmap on screen until the next URL has
- * decoded, then crossfades. The note icon is only used when nothing has ever loaded.
+ * decoded, then crossfades. Missing art is left empty rather than showing a placeholder.
  */
 @Composable
 fun AlbumArt(
@@ -73,6 +69,8 @@ fun AlbumArt(
             .size(size)
             .graphicsLayer { clip = false }
             .drawBehind {
+                if (shown == null) return@drawBehind
+
                 val outline = shape.createOutline(this.size, layoutDirection, this)
                 if (outline !is Outline.Generic) return@drawBehind
 
@@ -108,13 +106,6 @@ fun AlbumArt(
                     contentDescription = contentDescription,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize(),
-                )
-            } else if (artUrl == null) {
-                Icon(
-                    imageVector = Icons.Rounded.MusicNote,
-                    contentDescription = null,
-                    tint = Color.White.copy(alpha = 0.22f),
-                    modifier = Modifier.size(size * 0.28f),
                 )
             }
         }

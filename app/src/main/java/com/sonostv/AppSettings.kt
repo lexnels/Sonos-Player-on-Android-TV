@@ -16,7 +16,7 @@ data class UiPrefs(
     val cornerRadiusDp: Float = 18f,
     /** Null means follow the last room the user selected. */
     val defaultGroupUuid: String? = null,
-    val backgroundStyle: BackgroundStyle = BackgroundStyle.Ambient,
+    val backgroundStyle: BackgroundStyle = BackgroundStyle.LavaLamp,
 )
 
 class AppSettings private constructor(context: Context) {
@@ -30,8 +30,8 @@ class AppSettings private constructor(context: Context) {
         cornerRadiusDp = prefs.getFloat(KEY_CORNER_RADIUS, 18f).coerceIn(MIN_RADIUS, MAX_RADIUS),
         defaultGroupUuid = prefs.getString(KEY_DEFAULT_GROUP, null),
         backgroundStyle = BackgroundStyle.entries.getOrElse(
-            prefs.getInt(KEY_BACKGROUND_STYLE, 0),
-        ) { BackgroundStyle.Ambient },
+            prefs.getInt(KEY_BACKGROUND_STYLE, BackgroundStyle.LavaLamp.ordinal),
+        ) { BackgroundStyle.LavaLamp },
     )
 
     fun setUiScale(scale: Float) {

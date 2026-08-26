@@ -41,4 +41,15 @@
                 android:endColor="#00000000" />
         </shape>
     </item>
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="radial"
+                android:centerX="0.12"
+                android:centerY="0.68"
+                android:gradientRadius="155%p"
+                android:startColor="#551E6B58"
+                android:endColor="#00000000" />
+        </shape>
+    </item>
 </layer-list>

@@ -52,6 +52,8 @@ fun AmbientBackground(artUrl: String?, modifier: Modifier = Modifier) {
                         1f to Color.Black.copy(alpha = 0.78f),
                     ),
                 )
+
+                drawNoise()
             },
     )
 }
