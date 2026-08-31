@@ -1,34 +1,24 @@
 package com.sonostv.media
 
-import android.app.Activity
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
-import android.util.Rational
 import com.sonostv.MainActivity
 
 /**
- * PiP keeper and Open [PendingIntent] for the TV now-playing card.
- *
- * On API 34–35 the launcher blocks background activity starts unless the app has a
- * visible window. TV only allows PiP for approved categories (we use `ticker` for
- * now-playing); [MainActivity] auto-enters PiP on Home so Open can expand the tile.
+ * Open [PendingIntent] for the TV now-playing card.
  *
  * Open uses a broadcast [PendingIntent] with background-start opt-in because
- * `getActivity` alone is still blocked when invoked by the TV launcher.
+ * `getActivity` alone is still blocked when invoked by the TV launcher on Android 14+.
  */
 object SessionLaunchHelper {
 
     private const val TAG = "SonosTV/Open"
     private const val REQUEST_OPEN_APP = 102
     const val ACTION_OPEN_APP = "com.sonostv.action.OPEN_APP"
-
-    /** True while [MainActivity] is in PiP keeping a visible window for BAL on API 34–35. */
-    @Volatile
-    var pipKeeperActive: Boolean = false
 
     /**
      * BAL mode for PendingIntent / activity starts from the now-playing Open action.
@@ -40,68 +30,6 @@ object SessionLaunchHelper {
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE ->
             android.app.ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
         else -> 0
-    }
-
-    fun configurePip(activity: Activity) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-        if (!activity.packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE)) {
-            Log.w(TAG, "PiP not supported on this device")
-            return
-        }
-        try {
-            val params = android.app.PictureInPictureParams.Builder()
-                .setAspectRatio(Rational(16, 9))
-                .apply {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        setAutoEnterEnabled(true)
-                        setSeamlessResizeEnabled(true)
-                    }
-                }
-                .build()
-            activity.setPictureInPictureParams(params)
-            Log.i(TAG, "PiP params set (auto-enter=${Build.VERSION.SDK_INT >= Build.VERSION_CODES.S})")
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed to set PiP params", e)
-        }
-    }
-
-    fun enterPipKeeper(activity: Activity) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-        if (Build.VERSION.SDK_INT >= 36) return
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return
-        if (!NowPlayingService.shouldKeepSessionAlive) {
-            Log.d(TAG, "skip PiP: no session content")
-            return
-        }
-        if (pipKeeperActive || activity.isInPictureInPictureMode) return
-        if (!activity.packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE)) {
-            Log.w(TAG, "skip PiP: FEATURE_PICTURE_IN_PICTURE missing")
-            return
-        }
-        try {
-            Log.i(TAG, "entering PiP keeper")
-            val entered = activity.enterPictureInPictureMode(
-                android.app.PictureInPictureParams.Builder()
-                    .setAspectRatio(Rational(16, 9))
-                    .apply {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                            setAutoEnterEnabled(true)
-                        }
-                    }
-                    .build(),
-            )
-            if (entered) {
-                pipKeeperActive = true
-            } else {
-                Log.w(TAG, "enterPictureInPictureMode returned false")
-            }
-        } catch (e: IllegalStateException) {
-            Log.w(TAG, "PiP keeper unavailable", e)
-        }
-    }
-
-    fun exitPipKeeper() {
-        pipKeeperActive = false
     }
 
     fun buildOpenIntent(context: Context): PendingIntent {

@@ -17,7 +17,6 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sonostv.media.NowPlayingService
-import com.sonostv.media.SessionLaunchHelper
 import com.sonostv.ui.DemoNowPlayingScreen
 import com.sonostv.ui.NowPlayingScreen
 import com.sonostv.ui.PlayerActions
@@ -48,8 +47,6 @@ class MainActivity : ComponentActivity() {
         } else if (intent?.getBooleanExtra("session_demo", false) == true) {
             NowPlayingService.startSessionDemo(this)
         }
-
-        if (shouldStartKeeper()) SessionLaunchHelper.configurePip(this)
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
         WindowInsetsControllerCompat(window, window.decorView).apply {
@@ -85,36 +82,18 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        android.util.Log.i("SonosTV/Open", "MainActivity onNewIntent pip=$isInPictureInPictureMode")
+        android.util.Log.i("SonosTV/Open", "MainActivity onNewIntent")
     }
 
     override fun onResume() {
         super.onResume()
-        if (isInPictureInPictureMode) {
-            SessionLaunchHelper.pipKeeperActive = true
-        } else {
-            SessionLaunchHelper.exitPipKeeper()
-        }
         if (!demoMode) viewModel.start()
-    }
-
-    override fun onUserLeaveHint() {
-        if (shouldStartKeeper()) SessionLaunchHelper.enterPipKeeper(this)
-        super.onUserLeaveHint()
     }
 
     override fun onPause() {
         if (!demoMode) viewModel.stop()
         super.onPause()
     }
-
-    override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: android.content.res.Configuration) {
-        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
-        SessionLaunchHelper.pipKeeperActive = isInPictureInPictureMode
-    }
-
-    private fun shouldStartKeeper(): Boolean =
-        !demoMode || intent?.getBooleanExtra("session_demo", false) == true
 
     /**
      * Route the remote's media and volume keys to Sonos rather than to this device,

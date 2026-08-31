@@ -14,7 +14,7 @@ A full-screen now-playing screen for **Android TV** and **Google TV**. Put on a 
 
 It finds your Sonos speakers on your home Wi-Fi. You do not need a Sonos account, and this is not an official Sonos app.
 
-**Version 1.6**
+**Version 1.8**
 
 <p align="center">
   <img src="docs/screenshots/now-playing.png" alt="Now playing on the TV: album art, song title, and playback buttons" width="800">
@@ -83,9 +83,7 @@ The **list** button is the upcoming queue. The **speaker** button is rooms. Sett
 
 ### Now playing on the TV home screen
 
-While music is playing and you leave the app (press **Home**), Android TV and Google TV show a now-playing card at the top of the launcher. **Stop** pauses Sonos; **Open** returns to the full now-playing screen.
-
-On Android 14 and later, the system blocks apps from opening in the background unless they still have a visible window. When you press **Home**, the app may shrink to a small **picture-in-picture** tile in the corner — that is intentional. It keeps the session alive so **Open** works. Tap **Open** on the card (or the PiP tile) to expand back to full screen.
+While music is playing and you leave the app (press **Home**), Android TV and Google TV show a now-playing card at the top of the launcher. **Stop** dismisses the card (music keeps playing on the speakers); **Open** returns to the full now-playing screen when the system allows it (Android 16+ is most reliable).
 
 Requires Android TV / Google TV on **Android 14 (API 34) or later** for the home-screen card. Older TV builds may not show the card at all.
 
@@ -119,10 +117,10 @@ Use the volume keys while this app (or the screensaver) is on screen. Some remot
 Allow installs from the file manager or LocalSend when Android asks. That is normal for apps that are not in the Play Store.
 
 **“Open” on the home-screen now-playing card does nothing**  
-Make sure something is actually playing, open the app once, then press **Home** before trying **Open**. You should see a small PiP tile in the corner while the card is visible. If **Open** still fails, check that the TV is on Android 14 or later. On Android 16+, the system allows the launch without PiP.
+Make sure something is actually playing and open the app once before pressing **Home**. **Open** depends on Android version: it works most reliably on **Android 16+**. On Android 14–15 the system may block background launches even with a valid media session.
 
 **Stop works but Open does not**  
-Both buttons use the same media session; **Stop** never needs to open a window, but **Open** does. The PiP tile (or Android 16+ background-start rules) is what makes **Open** possible on current TVs.
+Both buttons use the same media session; **Stop** only dismisses the card and never needs to open a window, but **Open** does. On Android 16+ the system allows that launch from the card; on older TV builds it may be blocked.
 
 ## How this was made
 

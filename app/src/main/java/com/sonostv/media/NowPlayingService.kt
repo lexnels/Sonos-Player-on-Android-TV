@@ -13,6 +13,7 @@ import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import android.os.IBinder
 import android.os.SystemClock
+import android.view.KeyEvent
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
@@ -99,7 +100,6 @@ class NowPlayingService : Service() {
         session.isActive = false
         session.release()
         shouldKeepSessionAlive = false
-        SessionLaunchHelper.exitPipKeeper()
         super.onDestroy()
     }
 
@@ -122,7 +122,6 @@ class NowPlayingService : Service() {
         val hasContent = track?.isEmpty == false
         if (session.isActive != hasContent) session.isActive = hasContent
         shouldKeepSessionAlive = hasContent
-        if (!hasContent) SessionLaunchHelper.exitPipKeeper()
 
         val playbackState = when (transport?.state) {
             PlayState.PLAYING -> PlaybackStateCompat.STATE_PLAYING
@@ -261,7 +260,7 @@ class NowPlayingService : Service() {
             .setSubText(state.group?.name)
             .setLargeIcon(artwork)
             .setContentIntent(buildOpenAppIntent())
-            .setDeleteIntent(mediaAction(PlaybackStateCompat.ACTION_STOP))
+            // No delete intent — swiping the notification or TV sleep must not send STOP to Sonos.
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
             .setOnlyAlertOnce(true)
@@ -316,14 +315,48 @@ class NowPlayingService : Service() {
 
     private inner class SessionCallback : MediaSessionCompat.Callback() {
         override fun onPlay() = controller.play()
-        override fun onPause() = controller.pause()
+
+        /**
+         * Ignored: Android TV sends pause when the display sleeps or the session is backgrounded.
+         * Deliberate pause from notification/remote buttons is handled in [onMediaButtonEvent].
+         */
+        override fun onPause() = Unit
+
         override fun onSkipToNext() = controller.next()
         override fun onSkipToPrevious() = controller.previous()
         override fun onSeekTo(pos: Long) = controller.seekTo(pos)
+
+        override fun onMediaButtonEvent(mediaButtonEvent: Intent): Boolean {
+            @Suppress("DEPRECATION")
+            val keyEvent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                mediaButtonEvent.getParcelableExtra(Intent.EXTRA_KEY_EVENT, KeyEvent::class.java)
+            } else {
+                mediaButtonEvent.getParcelableExtra(Intent.EXTRA_KEY_EVENT)
+            } ?: return super.onMediaButtonEvent(mediaButtonEvent)
+            if (keyEvent.action != KeyEvent.ACTION_DOWN) return true
+            return when (keyEvent.keyCode) {
+                KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, KeyEvent.KEYCODE_HEADSETHOOK -> {
+                    controller.togglePlayPause()
+                    true
+                }
+                KeyEvent.KEYCODE_MEDIA_PAUSE -> {
+                    controller.pause()
+                    true
+                }
+                KeyEvent.KEYCODE_MEDIA_PLAY -> {
+                    controller.play()
+                    true
+                }
+                else -> super.onMediaButtonEvent(mediaButtonEvent)
+            }
+        }
+
+        /**
+         * Dismisses the now-playing card and tears down the foreground service without
+         * pausing the speakers — they are the real player, not this device.
+         */
         override fun onStop() {
-            controller.pause()
             shouldKeepSessionAlive = false
-            SessionLaunchHelper.exitPipKeeper()
             stopSelf()
         }
     }
