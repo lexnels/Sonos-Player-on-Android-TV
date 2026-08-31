@@ -22,8 +22,8 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
  * independent, so it looks the same on every device and costs nothing to draw.
  */
 @Composable
-fun AmbientBackground(artUrl: String?, modifier: Modifier = Modifier) {
-    val palette = rememberArtPalette(artUrl)
+fun AmbientBackground(artUrl: String?, roomKey: Any? = null, modifier: Modifier = Modifier) {
+    val palette = rememberArtPalette(artUrl, roomKey)
 
     val spec = tween<Color>(durationMillis = 1200)
     val base by animateColorAsState(palette.base, spec, label = "base")

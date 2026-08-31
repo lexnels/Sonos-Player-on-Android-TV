@@ -115,8 +115,14 @@ fun NowPlayingScreen(
             },
     ) {
         when (prefs.backgroundStyle) {
-            BackgroundStyle.Ambient -> AmbientBackground(state.transport?.track?.artUrl)
-            BackgroundStyle.LavaLamp -> LavaLampBackground(state.transport?.track?.artUrl)
+            BackgroundStyle.Ambient -> AmbientBackground(
+                artUrl = state.transport?.track?.artUrl,
+                roomKey = state.group?.id,
+            )
+            BackgroundStyle.LavaLamp -> LavaLampBackground(
+                artUrl = state.transport?.track?.artUrl,
+                roomKey = state.group?.id,
+            )
         }
 
         when {
@@ -214,7 +220,7 @@ private fun PlayerContent(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                AlbumArt(artUrl = track?.artUrl, size = artSize)
+                AlbumArt(artUrl = track?.artUrl, roomKey = state.group?.id, size = artSize)
 
                 Spacer(Modifier.width(36.dp))
 

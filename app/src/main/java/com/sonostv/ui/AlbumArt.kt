@@ -39,10 +39,14 @@ private const val ArtFadeMs = 700
 /**
  * Cover art that keeps the last successful bitmap on screen until the next URL has
  * decoded, then crossfades. Missing art is left empty rather than showing a placeholder.
+ *
+ * [roomKey] should change when the user switches rooms so stale art from the previous
+ * speaker is cleared immediately instead of lingering through the next fetch.
  */
 @Composable
 fun AlbumArt(
     artUrl: String?,
+    roomKey: Any?,
     size: Dp,
     modifier: Modifier = Modifier,
     shape: Shape = SquircleShape(radius = LocalCornerRadius.current, smoothing = 0.6f),
@@ -52,8 +56,16 @@ fun AlbumArt(
     val context = LocalContext.current
     val layoutDirection = LocalLayoutDirection.current
 
-    LaunchedEffect(artUrl) {
-        val url = artUrl ?: return@LaunchedEffect
+    LaunchedEffect(roomKey) {
+        shown = null
+    }
+
+    LaunchedEffect(roomKey, artUrl) {
+        val url = artUrl
+        if (url == null) {
+            shown = null
+            return@LaunchedEffect
+        }
         val result = context.imageLoader.execute(
             ImageRequest.Builder(context)
                 .data(url)

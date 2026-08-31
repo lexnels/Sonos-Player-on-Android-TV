@@ -26,8 +26,8 @@ import kotlin.math.sin
  * to square layout bounds (which is what makes `Modifier.blur` look blocky).
  */
 @Composable
-fun LavaLampBackground(artUrl: String?, modifier: Modifier = Modifier) {
-    val palette = rememberArtPalette(artUrl)
+fun LavaLampBackground(artUrl: String?, roomKey: Any? = null, modifier: Modifier = Modifier) {
+    val palette = rememberArtPalette(artUrl, roomKey)
     val spec = tween<Color>(durationMillis = 1200)
     val base by animateColorAsState(palette.base, spec, label = "base")
     val blob1 by animateColorAsState(palette.topLeft, spec, label = "blob1")

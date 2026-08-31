@@ -257,11 +257,15 @@ data class ArtPalette(
 }
 
 @Composable
-fun rememberArtPalette(artUrl: String?): ArtPalette {
+fun rememberArtPalette(artUrl: String?, roomKey: Any? = null): ArtPalette {
     val context = LocalContext.current
     var palette by remember { mutableStateOf(ArtPalette.Default) }
 
-    LaunchedEffect(artUrl) {
+    LaunchedEffect(roomKey) {
+        palette = ArtPalette.Default
+    }
+
+    LaunchedEffect(roomKey, artUrl) {
         palette = if (artUrl == null) {
             ArtPalette.Default
         } else {
