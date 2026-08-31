@@ -1,12 +1,14 @@
 package com.sonostv
 
 import android.content.Context
+import android.os.SystemClock
 import com.sonostv.sonos.ConnectionState
 import com.sonostv.sonos.NowPlaying
 import com.sonostv.sonos.PlayState
 import com.sonostv.sonos.SonosClient
 import com.sonostv.sonos.SonosDiscovery
 import com.sonostv.sonos.SonosGroup
+import com.sonostv.sonos.Transport
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -37,6 +39,10 @@ class SonosController private constructor(context: Context) {
 
     private var pollJob: Job? = null
     private var tickJob: Job? = null
+    private var seekJob: Job? = null
+    private var seekTargetMs: Long? = null
+    private var playbackAnchorMs: Long = 0L
+    private var playbackAnchorRealtime: Long = 0L
     private var holders = 0
     private var consecutiveFailures = 0
     private var pollCycle = 0
@@ -127,7 +133,8 @@ class SonosController private constructor(context: Context) {
         val host = group.coordinator.host
 
         val transport = runCatching { client.fetchTransport(host) }.getOrElse { return false }
-        _state.update { it.copy(transport = transport, connectionState = ConnectionState.Connected) }
+        val resolved = mergeTransportPosition(transport)
+        _state.update { it.copy(transport = resolved, connectionState = ConnectionState.Connected) }
 
         if (pollCycle % VOLUME_EVERY == 0) {
             runCatching { client.fetchVolume(host) }.onSuccess { (volume, muted) ->
@@ -162,18 +169,63 @@ class SonosController private constructor(context: Context) {
         }
     }
 
+    private fun anchorPlayback(positionMs: Long) {
+        playbackAnchorMs = positionMs
+        playbackAnchorRealtime = SystemClock.elapsedRealtime()
+    }
+
+    private fun interpolatedPositionMs(transport: Transport): Long {
+        seekTargetMs?.let { return it }
+        if (transport.state != PlayState.PLAYING || transport.durationMs <= 0) {
+            return playbackAnchorMs
+        }
+        val elapsed = SystemClock.elapsedRealtime() - playbackAnchorRealtime
+        return (playbackAnchorMs + elapsed).coerceIn(0L, transport.durationMs)
+    }
+
+    private fun withInterpolatedPosition(transport: Transport): Transport {
+        return transport.copy(positionMs = interpolatedPositionMs(transport))
+    }
+
+    /** Reconcile polled transport with the local playback clock and any in-flight seek. */
+    private fun mergeTransportPosition(transport: Transport): Transport {
+        val current = _state.value.transport
+        val displayed = current?.let { interpolatedPositionMs(it) } ?: transport.positionMs
+
+        if (transport.state != PlayState.PLAYING) {
+            val frozen = seekTargetMs ?: displayed
+            anchorPlayback(frozen)
+            return transport.copy(positionMs = frozen)
+        }
+
+        val target = seekTargetMs ?: run {
+            val polled = transport.positionMs
+            val anchor = if (kotlin.math.abs(polled - displayed) <= POLL_DRIFT_MS) displayed else polled
+            anchorPlayback(anchor)
+            return withInterpolatedPosition(transport)
+        }
+
+        if (transport.positionMs + SEEK_TOLERANCE_MS < target) {
+            anchorPlayback(target)
+            return transport.copy(positionMs = target)
+        }
+
+        seekTargetMs = null
+        anchorPlayback(maxOf(transport.positionMs, target))
+        return withInterpolatedPosition(transport)
+    }
+
     /** Keeps the progress bar moving smoothly between polls. */
     private suspend fun tickLoop() {
         while (coroutineContext.isActive) {
             delay(TICK_MS)
             _state.update { current ->
                 val transport = current.transport ?: return@update current
-                if (!transport.state.isPlaying || transport.durationMs <= 0) return@update current
-                current.copy(
-                    transport = transport.copy(
-                        positionMs = (transport.positionMs + TICK_MS).coerceAtMost(transport.durationMs),
-                    ),
-                )
+                if (seekTargetMs != null) return@update current
+                if (transport.state != PlayState.PLAYING || transport.durationMs <= 0) return@update current
+                val positionMs = interpolatedPositionMs(transport)
+                if (positionMs == transport.positionMs) return@update current
+                current.copy(transport = transport.copy(positionMs = positionMs))
             }
         }
     }
@@ -235,11 +287,37 @@ class SonosController private constructor(context: Context) {
         ) { host -> client.previous(host) }
     }
 
-    fun seekTo(positionMs: Long) = command(
-        optimistic = { current ->
-            current.transport?.let { current.copy(transport = it.copy(positionMs = positionMs)) } ?: current
-        },
-    ) { host -> client.seekToMillis(host, positionMs) }
+    fun seekTo(positionMs: Long) {
+        val transport = _state.value.transport ?: return
+        val maxPosition = transport.durationMs.takeIf { it > 0 }
+        val target = if (maxPosition != null) {
+            positionMs.coerceIn(0L, maxPosition)
+        } else {
+            positionMs.coerceAtLeast(0L)
+        }
+        seekTargetMs = target
+        anchorPlayback(target)
+        _state.update { current ->
+            current.transport?.let { transport ->
+                current.copy(
+                    transport = transport.copy(
+                        state = PlayState.TRANSITIONING,
+                        positionMs = target,
+                    ),
+                )
+            } ?: current
+        }
+        seekJob?.cancel()
+        seekJob = scope.launch {
+            delay(SEEK_DEBOUNCE_MS)
+            val settled = seekTargetMs ?: return@launch
+            val host = _state.value.group?.coordinator?.host ?: return@launch
+            runCatching { client.seekToMillis(host, settled) }
+            delay(COMMAND_SETTLE_MS)
+            if (seekTargetMs != settled) return@launch
+            _state.value.group?.let { refresh(it) }
+        }
+    }
 
     fun adjustVolume(delta: Int) {
         val optimistic = (_state.value.volume + delta).coerceIn(0, 100)
@@ -283,6 +361,9 @@ class SonosController private constructor(context: Context) {
         private const val RETRY_DELAY_MS = 4_000L
         private const val TICK_MS = 500L
         private const val COMMAND_SETTLE_MS = 350L
+        private const val SEEK_DEBOUNCE_MS = 200L
+        private const val SEEK_TOLERANCE_MS = 1_500L
+        private const val POLL_DRIFT_MS = 2_000L
         private const val RESTART_THRESHOLD_MS = 5_000L
         private const val MAX_FAILURES = 3
         private const val VOLUME_EVERY = 4

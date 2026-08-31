@@ -2,6 +2,7 @@ package com.sonostv.ui
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -16,6 +17,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,6 +37,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import kotlinx.coroutines.delay
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -102,24 +105,52 @@ fun Scrubber(
     modifier: Modifier = Modifier,
 ) {
     var focused by remember { mutableStateOf(false) }
-    val progress = if (durationMs > 0) (positionMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
-    val animatedProgress by animateFloatAsState(progress, tween(300), label = "progress")
+    var scrubPositionMs by remember { mutableStateOf(positionMs) }
+    var stepping by remember { mutableStateOf(false) }
+    var settleGeneration by remember { mutableStateOf(0) }
+
+    LaunchedEffect(positionMs) {
+        if (!stepping) scrubPositionMs = positionMs
+    }
+
+    LaunchedEffect(settleGeneration) {
+        if (settleGeneration == 0) return@LaunchedEffect
+        delay(SCRUB_STEP_SETTLE_MS)
+        stepping = false
+    }
+
+    val displayMs = if (stepping) scrubPositionMs else positionMs
+    val progress = if (durationMs > 0) (displayMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
+    val animatedProgress by animateFloatAsState(
+        progress,
+        if (stepping) snap() else tween(300),
+        label = "progress",
+    )
     val trackHeight by animateDpAsState(if (focused) 5.dp else 3.dp, tween(180), label = "trackHeight")
 
     Box(
         modifier = modifier
             .height(16.dp)
-            .onFocusChanged { focused = it.isFocused }
+            .onFocusChanged { focusState ->
+                focused = focusState.isFocused
+                if (focusState.isFocused) scrubPositionMs = positionMs
+            }
             .onKeyEvent { event ->
                 if (!enabled || event.type != KeyEventType.KeyDown) return@onKeyEvent false
                 when (event.key) {
                     Key.DirectionRight -> {
-                        onSeek((positionMs + SEEK_STEP_MS).coerceAtMost(durationMs))
+                        stepping = true
+                        settleGeneration++
+                        scrubPositionMs = (scrubPositionMs + SEEK_STEP_MS).coerceAtMost(durationMs)
+                        onSeek(scrubPositionMs)
                         true
                     }
 
                     Key.DirectionLeft -> {
-                        onSeek((positionMs - SEEK_STEP_MS).coerceAtLeast(0L))
+                        stepping = true
+                        settleGeneration++
+                        scrubPositionMs = (scrubPositionMs - SEEK_STEP_MS).coerceAtLeast(0L)
+                        onSeek(scrubPositionMs)
                         true
                     }
 
@@ -157,3 +188,4 @@ fun ControlDivider(modifier: Modifier = Modifier) {
 }
 
 private const val SEEK_STEP_MS = 10_000L
+private const val SCRUB_STEP_SETTLE_MS = 300L
