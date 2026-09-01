@@ -5,20 +5,20 @@
 # Sonos Player on Android TV
 
 <p>
-  <img src="https://img.shields.io/badge/Kotlin-7F52FF?style=flat-square&logo=kotlin&logoColor=white" alt="Kotlin">
-  <img src="https://img.shields.io/badge/Jetpack%20Compose-4285F4?style=flat-square&logo=jetpackcompose&logoColor=white" alt="Jetpack Compose">
-  <img src="https://img.shields.io/badge/Android%20TV-3DDC84?style=flat-square&logo=android&logoColor=white" alt="Android TV">
-  <img src="https://img.shields.io/badge/Material%203-6750A4?style=flat-square&logo=materialdesign&logoColor=white" alt="Material 3">
-  <img src="https://img.shields.io/badge/OkHttp-311C24?style=flat-square" alt="OkHttp">
-  <img src="https://img.shields.io/badge/Coil-000000?style=flat-square" alt="Coil">
-  <img src="https://img.shields.io/badge/Gradle-02303A?style=flat-square&logo=gradle&logoColor=white" alt="Gradle">
+  <a href="https://github.com/JetBrains/kotlin"><img src="https://img.shields.io/badge/Kotlin-7F52FF?style=flat-square&logo=kotlin&logoColor=white" alt="Kotlin"></a>
+  <a href="https://github.com/androidx/androidx"><img src="https://img.shields.io/badge/Jetpack%20Compose-4285F4?style=flat-square&logo=jetpackcompose&logoColor=white" alt="Jetpack Compose"></a>
+  <a href="https://github.com/android/tv-samples"><img src="https://img.shields.io/badge/Android%20TV-3DDC84?style=flat-square&logo=android&logoColor=white" alt="Android TV"></a>
+  <a href="https://github.com/material-components/material-components-android"><img src="https://img.shields.io/badge/Material%203-6750A4?style=flat-square&logo=materialdesign&logoColor=white" alt="Material 3"></a>
+  <a href="https://github.com/square/okhttp"><img src="https://img.shields.io/badge/OkHttp-311C24?style=flat-square" alt="OkHttp"></a>
+  <a href="https://github.com/coil-kt/coil"><img src="https://img.shields.io/badge/Coil-000000?style=flat-square" alt="Coil"></a>
+  <a href="https://github.com/gradle/gradle"><img src="https://img.shields.io/badge/Gradle-02303A?style=flat-square&logo=gradle&logoColor=white" alt="Gradle"></a>
 </p>
 
 A full-screen now-playing screen for **Android TV** and **Google TV**. Album art, track info, and playback controls on the television while your Sonos speakers play.
 
 The app discovers speakers on your home Wi-Fi. No Sonos account required. This is not an official Sonos app.
 
-**Version 0.12**
+**Version 0.13**
 
 
 ## Features
@@ -75,7 +75,10 @@ The screensaver stays on screen **only while music is playing**. If nothing is p
 Yes. A background service keeps the now-playing card updated and lets other apps see what’s playing. Music stays on your speakers—nothing is sent online. You can turn this off in **Settings → Home-screen now playing**.
 
 **What does Stop on the home-screen card do?**  
-It pauses playback on your Sonos speakers, same as pause in the Sonos app.
+It pauses playback on your Sonos speakers, same as pause in the Sonos app. On Android TV and Google TV the launcher sends a **pause** command for Stop (not a separate stop command), so the app handles that path explicitly.
+
+**What does the Home-screen now playing setting do?**  
+When **On** (default), a background service keeps the launcher card updated after you press Home. When **Off**, the app only runs while it is open — no home-screen card and no background service.
 
 **Do I need a Sonos account?**  
 No. The app finds speakers on your home network.
@@ -107,7 +110,7 @@ Allow installs from the file manager or LocalSend when Android prompts. Normal f
 Start playback, open the app once, then press **Home**. **Open** depends on Android version — most reliable on **Android 16+**. On Android 14–15 the system may block background launches.
 
 **The home-screen card reappeared right after Stop**  
-Update to the latest build — **Stop** should pause the speakers. To hide the card entirely, turn off **Home-screen now playing** in Settings.
+Fixed in **0.13** — Stop should pause the speakers and keep the card dismissed. If it still pops back, turn off **Home-screen now playing** in Settings.
 
 **Stop works but Open does not**  
 Both buttons use the same media session. **Stop** pauses playback without opening a window; **Open** must launch the app. Android 16+ allows that from the card; older TV builds may block it.

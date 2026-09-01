@@ -47,6 +47,7 @@ class OpenAppReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
         if (intent?.action != SessionLaunchHelper.ACTION_OPEN_APP) return
         Log.i(TAG, "OpenAppReceiver fired")
+        NowPlayingService.startFromUser(context)
         val launch = Intent(context, MainActivity::class.java).apply {
             addFlags(
                 Intent.FLAG_ACTIVITY_NEW_TASK or

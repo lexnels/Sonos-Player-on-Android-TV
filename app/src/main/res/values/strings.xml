@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Sonos Now Playing on TV</string>
+    <string name="app_name">Sonos Player on TV</string>
     <string name="channel_now_playing">Now playing</string>
-    <string name="screensaver_name">Sonos Now Playing</string>
+    <string name="screensaver_name">Sonos Player</string>
     <string name="action_play">Play</string>
     <string name="action_pause">Pause</string>
     <string name="action_next">Next</string>
     <string name="action_previous">Previous</string>
+    <string name="notification_stopped">Playback stopped</string>
 </resources>

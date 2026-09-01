@@ -18,6 +18,8 @@ data class UiPrefs(
     /** Null means follow the last room the user selected. */
     val defaultGroupUuid: String? = null,
     val backgroundStyle: BackgroundStyle = BackgroundStyle.Animated,
+    /** Publishes a media session after Home / at boot so the launcher can show now playing. */
+    val backgroundNowPlaying: Boolean = true,
 )
 
 class AppSettings private constructor(context: Context) {
@@ -33,7 +35,11 @@ class AppSettings private constructor(context: Context) {
         backgroundStyle = BackgroundStyle.entries.getOrElse(
             prefs.getInt(KEY_BACKGROUND_STYLE, BackgroundStyle.Animated.ordinal),
         ) { BackgroundStyle.Animated },
+        backgroundNowPlaying = prefs.getBoolean(KEY_BACKGROUND_NOW_PLAYING, true),
     )
+
+    fun backgroundNowPlayingEnabled(): Boolean =
+        prefs.getBoolean(KEY_BACKGROUND_NOW_PLAYING, true)
 
     fun setUiScale(scale: Float) {
         val clamped = scale.coerceIn(MIN_SCALE, MAX_SCALE)
@@ -57,6 +63,17 @@ class AppSettings private constructor(context: Context) {
         _value.update { it.copy(backgroundStyle = style) }
     }
 
+    fun setBackgroundNowPlaying(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_BACKGROUND_NOW_PLAYING, enabled).apply()
+        _value.update { it.copy(backgroundNowPlaying = enabled) }
+    }
+
+    fun isHomeCardStopped(): Boolean = prefs.getBoolean(KEY_HOME_CARD_STOPPED, false)
+
+    fun setHomeCardStopped(stopped: Boolean) {
+        prefs.edit().putBoolean(KEY_HOME_CARD_STOPPED, stopped).apply()
+    }
+
     companion object {
         const val PREFS_NAME = "sonos_tv"
         const val KEY_LAST_GROUP = "last_group_uuid"
@@ -64,6 +81,8 @@ class AppSettings private constructor(context: Context) {
         const val KEY_UI_SCALE = "ui_scale"
         const val KEY_CORNER_RADIUS = "corner_radius_dp"
         const val KEY_BACKGROUND_STYLE = "background_style"
+        const val KEY_BACKGROUND_NOW_PLAYING = "background_now_playing"
+        const val KEY_HOME_CARD_STOPPED = "home_card_stopped"
 
         const val MIN_SCALE = 0.5f
         const val MAX_SCALE = 1.5f

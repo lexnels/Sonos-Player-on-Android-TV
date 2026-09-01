@@ -43,7 +43,7 @@ class MainActivity : ComponentActivity() {
 
         if (!demoMode) {
             requestNotificationPermission()
-            NowPlayingService.start(this)
+            NowPlayingService.startFromUser(this)
         } else if (intent?.getBooleanExtra("session_demo", false) == true) {
             NowPlayingService.startSessionDemo(this)
         }

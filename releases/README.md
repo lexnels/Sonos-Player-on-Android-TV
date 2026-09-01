@@ -2,6 +2,8 @@
 
 This folder holds the install file (APK) for the current version. You can also download from **[GitHub Releases](https://github.com/lexnels/Sonos-Player-on-Android-TV/releases/latest)**.
 
+**Latest:** `SonosTV-0.13(14)-release.apk`
+
 ## Install it on your TV
 
 The install file is an **APK**. Grab the latest from GitHub Releases or the APK in this folder.

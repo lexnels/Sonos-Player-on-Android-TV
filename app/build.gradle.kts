@@ -23,8 +23,8 @@ android {
             applicationId = "com.sonostv"
             minSdk = 23
             targetSdk = 35
-        versionCode = 11
-        versionName = "0.10"
+        versionCode = 14
+        versionName = "0.13"
     }
 
     signingConfigs {
@@ -52,6 +52,8 @@ android {
             val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
             output.outputFileName = "SonosTV-${variant.versionName}(${variant.versionCode})-${variant.name}.apk"
         }
+
+        if (variant.buildType.name != "release") return@all
 
         val capitalized = variant.name.replaceFirstChar { it.titlecase() }
         val copyApk = tasks.register("copy${capitalized}ApkToReleases") {

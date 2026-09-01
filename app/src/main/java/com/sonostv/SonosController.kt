@@ -62,11 +62,8 @@ class SonosController private constructor(context: Context) {
         if (holders > 0) return
         pollJob?.cancel()
         tickJob?.cancel()
-        seekJob?.cancel()
         pollJob = null
         tickJob = null
-        seekJob = null
-        seekTargetMs = null
     }
 
     // ---- Polling -----------------------------------------------------------
@@ -261,9 +258,13 @@ class SonosController private constructor(context: Context) {
         },
     ) { host -> client.play(host) }
 
-    fun pause() = command(
-        optimistic = { current ->
-            current.transport?.let { current.copy(transport = it.copy(state = PlayState.PAUSED)) } ?: current
+    fun pause(optimistic: Boolean = true) = command(
+        optimistic = if (optimistic) {
+            { current ->
+                current.transport?.let { current.copy(transport = it.copy(state = PlayState.PAUSED)) } ?: current
+            }
+        } else {
+            { it }
         },
     ) { host -> client.pause(host) }
 

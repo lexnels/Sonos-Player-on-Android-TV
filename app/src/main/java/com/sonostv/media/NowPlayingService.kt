@@ -13,6 +13,7 @@ import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import android.os.IBinder
 import android.os.SystemClock
+import android.util.Log
 import android.view.KeyEvent
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
@@ -24,6 +25,7 @@ import androidx.media.session.MediaButtonReceiver
 import coil.imageLoader
 import coil.request.ImageRequest
 import com.sonostv.R
+import com.sonostv.AppSettings
 import com.sonostv.SonosController
 import com.sonostv.sonos.NowPlaying
 import com.sonostv.sonos.PlayState
@@ -46,6 +48,7 @@ import kotlinx.coroutines.launch
  */
 class NowPlayingService : Service() {
 
+    private val settings by lazy { AppSettings.get(this) }
     private val controller by lazy { SonosController.get(this) }
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
@@ -61,35 +64,74 @@ class NowPlayingService : Service() {
     private var lastPlaybackPublishedAt = 0L
     private var startedForeground = false
     private var sessionDemo = false
+    private var monitorJob: Job? = null
 
     override fun onCreate() {
         super.onCreate()
         createChannel()
         session = MediaSessionCompat(this, "SonosTV").apply {
+            setFlags(
+                MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or
+                    MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS,
+            )
             setCallback(SessionCallback())
             isActive = true
         }
 
-        controller.acquire()
-        scope.launch {
-            controller.state.collect { state ->
-                if (!sessionDemo) publish(state)
-            }
+        if (!settings.isHomeCardStopped()) {
+            ensureMonitoring()
+        } else {
+            session.isActive = false
         }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        MediaButtonReceiver.handleIntent(session, intent)
+        if (settings.isHomeCardStopped()) {
+            if (intent == null || intent.action == Intent.ACTION_MEDIA_BUTTON) {
+                stopSelf()
+                return START_NOT_STICKY
+            }
+            settings.setHomeCardStopped(false)
+            ensureMonitoring()
+        }
+
+        handleMediaButtonIntent(intent)
+
         if (intent?.getBooleanExtra(EXTRA_SESSION_DEMO, false) == true) {
             sessionDemo = true
+            settings.setHomeCardStopped(false)
+            ensureMonitoring()
             publish(DemoData.nowPlaying)
         }
-        if (!startedForeground) {
+
+        if (!startedForeground && !settings.isHomeCardStopped()) {
             startForeground(buildNotification(
                 if (sessionDemo) DemoData.nowPlaying else controller.state.value,
             ))
         }
-        return START_STICKY
+        return if (settings.isHomeCardStopped()) START_NOT_STICKY else START_STICKY
+    }
+
+    /** [MediaButtonReceiver] throws if [Intent.EXTRA_KEY_EVENT] is missing — common after Stop. */
+    private fun handleMediaButtonIntent(intent: Intent?) {
+        if (intent?.action != Intent.ACTION_MEDIA_BUTTON) return
+        val keyEvent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT, KeyEvent::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT)
+        } ?: return
+        MediaButtonReceiver.handleIntent(session, intent)
+    }
+
+    private fun ensureMonitoring() {
+        controller.acquire()
+        if (monitorJob?.isActive == true) return
+        monitorJob = scope.launch {
+            controller.state.collect { state ->
+                if (!sessionDemo) publish(state)
+            }
+        }
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -106,6 +148,8 @@ class NowPlayingService : Service() {
     // ---- Session + notification --------------------------------------------
 
     private fun publish(state: NowPlaying) {
+        if (settings.isHomeCardStopped()) return
+
         val transport = state.transport
         val track = transport?.track
 
@@ -214,8 +258,10 @@ class NowPlayingService : Service() {
             )
             val bitmap = (result.drawable as? BitmapDrawable)?.bitmap ?: return@launch
             artwork = bitmap
-            setMetadata(controller.state.value)
-            startForeground(buildNotification(controller.state.value))
+            if (!settings.isHomeCardStopped()) {
+                setMetadata(controller.state.value)
+                startForeground(buildNotification(controller.state.value))
+            }
         }
     }
 
@@ -295,6 +341,26 @@ class NowPlayingService : Service() {
             .build()
     }
 
+    /**
+     * Pauses Sonos and tears down the media session. TV launchers only drop the home-screen
+     * card when the session is gone — hiding metadata on a live session is not enough.
+     */
+    private fun handleUserStop() {
+        Log.i(TAG, "handleUserStop")
+        settings.setHomeCardStopped(true)
+        controller.pause()
+        session.isActive = false
+        shouldKeepSessionAlive = false
+        startedForeground = false
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        } else {
+            @Suppress("DEPRECATION")
+            stopForeground(true)
+        }
+        stopSelf()
+    }
+
     private fun mediaAction(action: Long): PendingIntent =
         MediaButtonReceiver.buildMediaButtonPendingIntent(this, action)
 
@@ -314,13 +380,15 @@ class NowPlayingService : Service() {
     }
 
     private inner class SessionCallback : MediaSessionCompat.Callback() {
-        override fun onPlay() = controller.play()
+        override fun onPlay() {
+            settings.setHomeCardStopped(false)
+            controller.play()
+        }
 
-        /**
-         * Ignored: Android TV sends pause when the display sleeps or the session is backgrounded.
-         * Deliberate pause from notification/remote buttons is handled in [onMediaButtonEvent].
-         */
-        override fun onPause() = Unit
+        override fun onPause() {
+            // Android TV home-screen Stop issues pause, not stop (see androidx/media#589).
+            handleUserStop()
+        }
 
         override fun onSkipToNext() = controller.next()
         override fun onSkipToPrevious() = controller.previous()
@@ -340,25 +408,23 @@ class NowPlayingService : Service() {
                     true
                 }
                 KeyEvent.KEYCODE_MEDIA_PAUSE -> {
-                    controller.pause()
+                    handleUserStop()
                     true
                 }
                 KeyEvent.KEYCODE_MEDIA_PLAY -> {
+                    settings.setHomeCardStopped(false)
                     controller.play()
+                    true
+                }
+                KeyEvent.KEYCODE_MEDIA_STOP -> {
+                    handleUserStop()
                     true
                 }
                 else -> super.onMediaButtonEvent(mediaButtonEvent)
             }
         }
 
-        /**
-         * Dismisses the now-playing card and tears down the foreground service without
-         * pausing the speakers — they are the real player, not this device.
-         */
-        override fun onStop() {
-            shouldKeepSessionAlive = false
-            stopSelf()
-        }
+        override fun onStop() = handleUserStop()
     }
 
     companion object {
@@ -381,7 +447,10 @@ class NowPlayingService : Service() {
             PlaybackStateCompat.ACTION_SEEK_TO or
             PlaybackStateCompat.ACTION_STOP
 
+        /** After boot or app update — not when the user pressed Stop on the home-screen card. */
         fun start(context: Context) {
+            if (!AppSettings.get(context).backgroundNowPlayingEnabled()) return
+            if (AppSettings.get(context).isHomeCardStopped()) return
             val intent = Intent(context, NowPlayingService::class.java)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(intent)
@@ -390,10 +459,27 @@ class NowPlayingService : Service() {
             }
         }
 
+        /** User opened the app — re-enable the home-screen card. */
+        fun startFromUser(context: Context) {
+            if (!AppSettings.get(context).backgroundNowPlayingEnabled()) return
+            AppSettings.get(context).setHomeCardStopped(false)
+            val intent = Intent(context, NowPlayingService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
+        }
+
+        fun stop(context: Context) {
+            context.stopService(Intent(context, NowPlayingService::class.java))
+        }
+
         /** Emulator/debug: fake now-playing metadata without Sonos on the network. */
         fun startSessionDemo(context: Context) {
             val intent = Intent(context, NowPlayingService::class.java)
                 .putExtra(EXTRA_SESSION_DEMO, true)
+            AppSettings.get(context).setHomeCardStopped(false)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(intent)
             } else {
@@ -402,5 +488,6 @@ class NowPlayingService : Service() {
         }
 
         private const val EXTRA_SESSION_DEMO = "session_demo"
+        private const val TAG = "SonosTV/Session"
     }
 }

@@ -56,6 +56,7 @@ import com.google.zxing.qrcode.QRCodeWriter
 import com.sonostv.AppSettings
 import com.sonostv.BackgroundStyle
 import com.sonostv.UiPrefs
+import com.sonostv.media.NowPlayingService
 import com.sonostv.sonos.SonosGroup
 
 const val BuyMeACoffeeUrl = "https://buymeacoffee.com/lexnels"
@@ -125,6 +126,20 @@ fun SettingsPanel(
             onStep = { direction ->
                 val next = (defaultIndex + direction).mod(defaultOptions.size)
                 settings.setDefaultGroupUuid(defaultOptions[next].first)
+            },
+        )
+        SettingStepper(
+            label = "Home-screen now playing",
+            valueText = if (prefs.backgroundNowPlaying) "On" else "Off",
+            onStep = { direction ->
+                val enabled = when (direction) {
+                    1 -> true
+                    -1 -> false
+                    else -> !prefs.backgroundNowPlaying
+                }
+                if (enabled == prefs.backgroundNowPlaying) return@SettingStepper
+                settings.setBackgroundNowPlaying(enabled)
+                if (enabled) NowPlayingService.start(context) else NowPlayingService.stop(context)
             },
         )
 
