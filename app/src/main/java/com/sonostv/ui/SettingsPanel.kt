@@ -167,7 +167,7 @@ private fun SettingStepper(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
-            .background(if (focused) Color.White else Color.Transparent)
+            .background(if (focused) SonosColors.MenuFocused else Color.Transparent)
             .onFocusChanged { focused = it.isFocused }
             .onKeyEvent { event ->
                 if (event.type != KeyEventType.KeyDown) return@onKeyEvent false

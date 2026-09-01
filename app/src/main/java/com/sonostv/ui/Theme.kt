@@ -40,6 +40,8 @@ object SonosColors {
     val ControlFocused = Color.White
     val ControlFocusedContent = Color(0xFF0A0A0C)
     val PanelBackground = Color.Black.copy(alpha = 0.9f)
+    /** Focus fill for list/menu rows. Pure white is too harsh on TV. */
+    val MenuFocused = Color(0xFFE4E4E8)
     val TrackIdle = Color.White.copy(alpha = 0.22f)
 }
 
