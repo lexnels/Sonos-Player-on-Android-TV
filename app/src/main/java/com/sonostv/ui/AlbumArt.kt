@@ -102,6 +102,13 @@ fun AlbumArt(
                     paint.setShadowLayer(40.dp.toPx(), 0f, offsetY, android.graphics.Color.argb(100, 0, 0, 0))
                     canvas.nativeCanvas.drawPath(path, paint)
                 }
+
+                // Dither the soft shadow; cover art drawn above hides grain on the face.
+                drawShadowNoise(
+                    shapePath = outline.path,
+                    offsetY = offsetY,
+                    spread = 72.dp.toPx(),
+                )
             }
             .clip(shape),
         contentAlignment = Alignment.Center,

@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -119,9 +120,14 @@ fun NowPlayingScreen(
                 artUrl = state.transport?.track?.artUrl,
                 roomKey = state.group?.id,
             )
-            BackgroundStyle.LavaLamp -> LavaLampBackground(
+            BackgroundStyle.Animated -> LavaLampBackground(
                 artUrl = state.transport?.track?.artUrl,
                 roomKey = state.group?.id,
+            )
+            BackgroundStyle.Black -> Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(Color.Black),
             )
         }
 
@@ -272,6 +278,7 @@ private fun PlayerContent(
                             transport = transport,
                             onSeek = actions.onSeek,
                             timecodeAlpha = chromeAlpha,
+                            barAlpha = 0.5f + 0.5f * chromeAlpha,
                         )
 
                         Spacer(Modifier.height(18.dp))
@@ -296,7 +303,12 @@ private fun PlayerContent(
 }
 
 @Composable
-private fun ProgressSection(transport: Transport?, onSeek: (Long) -> Unit, timecodeAlpha: Float) {
+private fun ProgressSection(
+    transport: Transport?,
+    onSeek: (Long) -> Unit,
+    timecodeAlpha: Float,
+    barAlpha: Float,
+) {
     val seekable = transport != null && !transport.isStream && transport.durationMs > 0
 
     Column(Modifier.fillMaxWidth()) {
@@ -305,7 +317,7 @@ private fun ProgressSection(transport: Transport?, onSeek: (Long) -> Unit, timec
             durationMs = transport?.durationMs ?: 0L,
             enabled = seekable,
             onSeek = onSeek,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().alpha(barAlpha),
         )
 
         Spacer(Modifier.height(2.dp))

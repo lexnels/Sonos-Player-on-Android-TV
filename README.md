@@ -14,7 +14,7 @@ A full-screen now-playing screen for **Android TV** and **Google TV**. Put on a 
 
 It finds your Sonos speakers on your home Wi-Fi. You do not need a Sonos account, and this is not an official Sonos app.
 
-**Version 0.8**
+**Version 0.9**
 
 <p align="center">
   <img src="docs/screenshots/now-playing.png" alt="Now playing on the TV: album art, song title, and playback buttons" width="800">
@@ -45,6 +45,8 @@ This project is not affiliated with Sonos, Inc.
 ## Install it on your TV
 
 The install file is an **APK**. Grab the latest from **[GitHub Releases](https://github.com/lexnels/sonos-android-tv/releases/latest)** (or the [releases folder](releases/) in this repo) — use the file whose name ends in **`-release.apk`**.
+
+**Allow third-party apps first.** This app is not in the Play Store, so the TV will block the install until you allow apps from unknown sources. In the TV **Settings**, look for **Unknown sources**, **Install unknown apps**, or **Allow third-party apps** (often under Apps or Security). Turn it on for the app you will use to open the APK (Files, LocalSend, or similar). The exact name depends on the brand.
 
 ### Send it with LocalSend (easiest)
 

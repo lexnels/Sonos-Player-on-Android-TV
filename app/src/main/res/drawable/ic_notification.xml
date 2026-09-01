@@ -1,16 +1,4 @@
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp"
-    android:height="24dp"
-    android:viewportWidth="24"
-    android:viewportHeight="24"
-    android:tint="#FFFFFFFF">
-    <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M4.5,12h3.5v8h-3.5z" />
-    <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M10.25,6h3.5v14h-3.5z" />
-    <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M16,9h3.5v11h-3.5z" />
-</vector>
+<?xml version="1.0" encoding="utf-8"?>
+<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
+    android:gravity="center"
+    android:src="@drawable/ic_launcher_foreground" />

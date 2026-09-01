@@ -61,24 +61,19 @@ fun LavaLampBackground(artUrl: String?, roomKey: Any? = null, modifier: Modifier
                 drawRect(base)
 
                 val blobRadius = size.maxDimension * 0.62f
-                drawSoftBlob(
-                    blob1,
-                    blobCenter(t1, 0.35f, 0.38f, 0.28f, 0.22f, phaseOffset = 0f),
-                    blobRadius,
-                )
-                drawSoftBlob(
-                    blob2,
-                    blobCenter(t2, 0.68f, 0.55f, 0.24f, 0.26f, phaseOffset = 2.1f),
-                    blobRadius,
-                )
-                drawSoftBlob(
-                    blob3,
-                    blobCenter(t3, 0.48f, 0.72f, 0.30f, 0.20f, phaseOffset = 4.3f),
-                    blobRadius,
-                )
+                val center1 = blobCenter(t1, 0.35f, 0.38f, 0.28f, 0.22f, phaseOffset = 0f)
+                drawSoftBlob(blob1, center1, blobRadius)
+                drawRadialNoise(center1, blobRadius, frame = (t1 * 1_000).toInt())
+
+                val center2 = blobCenter(t2, 0.68f, 0.55f, 0.24f, 0.26f, phaseOffset = 2.1f)
+                drawSoftBlob(blob2, center2, blobRadius)
+                drawRadialNoise(center2, blobRadius, frame = (t2 * 1_000).toInt() + 1)
+
+                val center3 = blobCenter(t3, 0.48f, 0.72f, 0.30f, 0.20f, phaseOffset = 4.3f)
+                drawSoftBlob(blob3, center3, blobRadius)
+                drawRadialNoise(center3, blobRadius, frame = (t3 * 1_000).toInt() + 2)
 
                 drawReadabilityOverlay()
-                drawNoise()
             },
     )
 }

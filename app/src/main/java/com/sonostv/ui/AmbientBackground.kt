@@ -39,10 +39,21 @@ fun AmbientBackground(artUrl: String?, roomKey: Any? = null, modifier: Modifier 
                 drawRect(base)
 
                 val radius = size.maxDimension * 0.85f
-                drawCorner(topLeft, Offset(0f, 0f), radius)
-                drawCorner(topRight, Offset(size.width, 0f), radius)
-                drawCorner(bottomLeft, Offset(0f, size.height), radius)
-                drawCorner(bottomRight, Offset(size.width, size.height), radius)
+                val topLeftCenter = Offset(0f, 0f)
+                drawCorner(topLeft, topLeftCenter, radius)
+                drawRadialNoise(topLeftCenter, radius, frame = 0)
+
+                val topRightCenter = Offset(size.width, 0f)
+                drawCorner(topRight, topRightCenter, radius)
+                drawRadialNoise(topRightCenter, radius, frame = 1)
+
+                val bottomLeftCenter = Offset(0f, size.height)
+                drawCorner(bottomLeft, bottomLeftCenter, radius)
+                drawRadialNoise(bottomLeftCenter, radius, frame = 2)
+
+                val bottomRightCenter = Offset(size.width, size.height)
+                drawCorner(bottomRight, bottomRightCenter, radius)
+                drawRadialNoise(bottomRightCenter, radius, frame = 3)
 
                 // Settle the whole thing down so white text stays comfortably readable.
                 drawRect(
@@ -52,8 +63,6 @@ fun AmbientBackground(artUrl: String?, roomKey: Any? = null, modifier: Modifier 
                         1f to Color.Black.copy(alpha = 0.78f),
                     ),
                 )
-
-                drawNoise()
             },
     )
 }

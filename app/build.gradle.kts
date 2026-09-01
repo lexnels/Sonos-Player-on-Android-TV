@@ -23,8 +23,8 @@ android {
             applicationId = "com.sonostv"
             minSdk = 23
             targetSdk = 35
-        versionCode = 9
-        versionName = "0.8"
+        versionCode = 10
+        versionName = "0.9"
     }
 
     signingConfigs {

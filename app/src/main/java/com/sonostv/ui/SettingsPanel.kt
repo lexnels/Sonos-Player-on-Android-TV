@@ -110,7 +110,8 @@ fun SettingsPanel(
             label = "Background",
             valueText = when (prefs.backgroundStyle) {
                 BackgroundStyle.Ambient -> "Ambient"
-                BackgroundStyle.LavaLamp -> "Lava lamp"
+                BackgroundStyle.Animated -> "Animated"
+                BackgroundStyle.Black -> "Black"
             },
             onStep = { direction ->
                 val styles = BackgroundStyle.entries
