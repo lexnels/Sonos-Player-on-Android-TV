@@ -62,8 +62,11 @@ class SonosController private constructor(context: Context) {
         if (holders > 0) return
         pollJob?.cancel()
         tickJob?.cancel()
+        seekJob?.cancel()
         pollJob = null
         tickJob = null
+        seekJob = null
+        seekTargetMs = null
     }
 
     // ---- Polling -----------------------------------------------------------
