@@ -1,4 +1,8 @@
-# Sonos Now Playing on TV
+<p align="center">
+  <img src="app/src/main/res/drawable-nodpi/app_banner.png" alt="Sonos Player on TV" width="640">
+</p>
+
+# Sonos Player on Android TV
 
 <p>
   <img src="https://img.shields.io/badge/Kotlin-7F52FF?style=flat-square&logo=kotlin&logoColor=white" alt="Kotlin">
@@ -10,126 +14,110 @@
   <img src="https://img.shields.io/badge/Gradle-02303A?style=flat-square&logo=gradle&logoColor=white" alt="Gradle">
 </p>
 
-A full-screen now-playing screen for **Android TV** and **Google TV**. Put on a record, sit on the sofa, and the album art fills the television.
+A full-screen now-playing screen for **Android TV** and **Google TV**. Album art, track info, and playback controls on the television while your Sonos speakers play.
 
-It finds your Sonos speakers on your home Wi-Fi. You do not need a Sonos account, and this is not an official Sonos app.
+The app discovers speakers on your home Wi-Fi. No Sonos account required. This is not an official Sonos app.
 
-**Version 0.10**
+**Version 0.12**
 
-<p align="center">
-  <img src="docs/screenshots/now-playing.png" alt="Now playing on the TV: album art, song title, and playback buttons" width="800">
-</p>
 
-## What you get
+## Features
 
-- Big artwork, song title, artist, album, and which room is playing
+- Large artwork, song title, artist, album, and which room is playing
 - Play, pause, skip, and volume from the TV remote (volume changes the **speakers**, not the TV)
-- A queue list and a room picker
-- After a few seconds of sitting still, the buttons fade so the cover art can breathe
-- An optional **screensaver** that shows the same screen while music is playing
-- Other TV apps (for example a custom home screen) can show what is playing too
-- On **Android TV** and **Google TV**, the home-screen now-playing card shows what Sonos is playing, with **Stop** and **Open** buttons — **Open** brings this app back to full screen
+- Queue list and room picker
+- Controls fade after a few seconds of inactivity so the artwork stays visible
+- Optional **screensaver** with the same now-playing screen while music is playing
+- Media session for other TV apps (for example a custom home screen) to read what is playing
+- **Home-screen now-playing card** on Android TV and Google TV with **Stop** and **Open** — **Open** returns to the full-screen app
 
-<p align="center">
-  <img src="docs/screenshots/idle.png" alt="The same screen after the buttons have faded away" width="800">
-</p>
 
-This will not work on a phone. You need a TV that runs Android TV or Google TV (Chromecast with Google TV, many Sony / TCL / Hisense sets, NVIDIA Shield, and similar).
+## Requirements
 
-Your TV and your Sonos speakers must be on the **same Wi-Fi**. Guest networks and “device isolation” usually block this.
+- **Android TV or Google TV** — Chromecast with Google TV, Sony / TCL / Hisense sets, NVIDIA Shield, and similar. Not for phones.
+- **Same Wi-Fi** as your Sonos speakers. Guest networks and device isolation usually block discovery.
+- **Android 14 (API 34) or later** for the home-screen now-playing card. Older TV builds may not show it.
 
 This project is not affiliated with Sonos, Inc.
 
-**Privacy:** No account, no cloud, no analytics. The app only talks to your Sonos speakers on your home network. Settings are stored on the TV.
+**Privacy:** No account, no cloud, no analytics. The app only talks to your Sonos speakers on your local network. Settings are stored on the TV.
 
-## Install it on your TV
+## Installation
 
-The install file is an **APK**. Grab the latest from **[GitHub Releases](https://github.com/lexnels/sonos-android-tv/releases/latest)** (or the [releases folder](releases/) in this repo) — use the file whose name ends in **`-release.apk`**.
+Download and install instructions are in **[releases/README.md](releases/README.md)**.
 
-**Allow third-party apps first.** This app is not in the Play Store, so the TV will block the install until you allow apps from unknown sources. In the TV **Settings**, look for **Unknown sources**, **Install unknown apps**, or **Allow third-party apps** (often under Apps or Security). Turn it on for the app you will use to open the APK (Files, LocalSend, or similar). The exact name depends on the brand.
+## Usage
 
-### Send it with LocalSend (easiest)
+### On-screen controls
 
-[LocalSend](https://localsend.org) is a free app that sends files from your phone or computer to the TV over Wi-Fi. No USB stick, no cables.
+The **list** button opens the queue. The **speaker** button opens room selection. **Settings** is at the bottom of the rooms list — UI scale, artwork corners, background style, default speaker, and whether the home-screen now-playing card stays active after you press Home.
 
-1. Install [LocalSend](https://localsend.org) on the device that has the APK **and** on the TV. On a phone or tablet, [Google Play](https://play.google.com/store/apps/details?id=org.localsend.localsend_app) is the simplest. On the TV, search the Play Store for **LocalSend**, or send that app’s own APK first if the store is not available.
-2. Open LocalSend on both. They need to be on the same Wi-Fi.
-3. On the sending device, pick the Sonos TV APK and send it to the TV.
-4. Accept the file on the TV.
+### Home-screen now playing
 
-Anything similar is fine too: a USB stick, Google Drive / email opened on the TV, or another nearby-share app. The idea is just to get the `.apk` file onto the television.
+While music is playing and you press **Home**, Android TV and Google TV show a now-playing card on the launcher. **Stop** pauses playback on your Sonos speakers. **Open** returns to the full now-playing screen when the system allows it (most reliable on Android 16+).
 
-### Open the file on the TV
+Turn the card off in **Settings → Home-screen now playing**. With it off, the app only runs while you have it open.
 
-1. Open **Files**, **Downloads**, or whatever file manager your TV has, and tap the APK.
-2. If Android asks you to allow installing from that app, turn it on, then try again.
-3. When it is installed, find **Sonos Now Playing on TV** in your apps row and open it.
+### Screensaver
 
-The first launch looks for speakers. If it cannot find them, check that the TV is on the same network as Sonos (not a guest Wi-Fi).
+Set the TV screensaver to **Sonos Player**:
 
-<p align="center">
-  <img src="docs/screenshots/queue.png" alt="The Up Next list on the right side of the screen" width="800">
-</p>
+1. Open TV **Settings**.
+2. Go to **Device preferences → Screen saver** (labels vary by brand).
+3. Choose **Sonos Player**.
+4. Set the idle timeout.
 
-## Use it
+The screensaver stays on screen **only while music is playing**. If nothing is playing, the TV returns to its normal idle behaviour. Volume, skip, and Back still work on the remote. Back closes an open panel first, then dismisses the screensaver.
 
-| On the remote | What happens |
-| --- | --- |
-| Arrows and OK | Move between buttons and press them |
-| Left / right on the progress bar | Jump in the track |
-| Volume and mute | Speaker volume |
-| Play / pause / skip | Same as on the Sonos app |
-| Back | Close a side panel, or leave the screensaver |
+## FAQ
 
-The **list** button is the upcoming queue. The **speaker** button is rooms. Settings is at the bottom of the rooms list (size of the text, roundness of the artwork, which room to use by default).
+**Does the app keep running after I press Home?**  
+Yes. A background service keeps the now-playing card updated and lets other apps see what’s playing. Music stays on your speakers—nothing is sent online. You can turn this off in **Settings → Home-screen now playing**.
 
-### Now playing on the TV home screen
+**What does Stop on the home-screen card do?**  
+It pauses playback on your Sonos speakers, same as pause in the Sonos app.
 
-While music is playing and you leave the app (press **Home**), Android TV and Google TV show a now-playing card at the top of the launcher. **Stop** dismisses the card (music keeps playing on the speakers); **Open** returns to the full now-playing screen when the system allows it (Android 16+ is most reliable).
+**Do I need a Sonos account?**  
+No. The app finds speakers on your home network.
 
-Requires Android TV / Google TV on **Android 14 (API 34) or later** for the home-screen card. Older TV builds may not show the card at all.
+**Why must the TV and speakers be on the same Wi-Fi?**  
+Sonos control uses local network discovery. Guest networks and device isolation usually block it.
 
-<p align="center">
-  <img src="docs/screenshots/rooms.png" alt="Choosing which Sonos room to follow" width="800">
-</p>
+**Does volume on the remote change the TV or the speakers?**  
+The speakers, when this app or the screensaver is on screen. Some remotes only adjust TV volume on the home screen.
 
-## Screensaver
-
-You can have this screen appear when the TV is left alone.
-
-1. Open the TV **Settings**.
-2. Look for **Device preferences → Screen saver** (the names vary a little by brand).
-3. Choose **Sonos Now Playing**.
-4. Pick how long to wait before it starts.
-
-It only stays on screen **while music is playing**. If nothing is playing, the TV goes back to its usual idle behaviour. You can still use the remote: volume, skip, and Back all work. Back closes a panel first, then turns the screensaver off.
+**Is anything collected or sent to the cloud?**  
+No. No account, no analytics, no cloud. Settings stay on the TV.
 
 ## Troubleshooting
 
 **“Looking for your Sonos…” never finishes**  
-TV and speakers must share a normal home network. Try a phone hotspot only if both the TV and the speakers are on it.
+The TV and speakers must be on the same home network. A phone hotspot only works if both devices join it.
 
 **Screensaver never appears**  
-Confirm it is selected in the TV’s screensaver settings, and that something is actually playing on Sonos.
+Confirm it is selected in the TV screensaver settings and that something is playing on Sonos.
 
 **Volume changes the TV, not the speakers**  
-Use the volume keys while this app (or the screensaver) is on screen. Some remotes only send volume to the TV when you are on the home screen.
+Use the volume keys while this app or the screensaver is on screen. Some remotes only send volume to the TV from the home screen.
 
 **Install is blocked**  
-Allow installs from the file manager or LocalSend when Android asks. That is normal for apps that are not in the Play Store.
+Allow installs from the file manager or LocalSend when Android prompts. Normal for apps outside the Play Store. See [releases/README.md](releases/README.md).
 
-**“Open” on the home-screen now-playing card does nothing**  
-Make sure something is actually playing and open the app once before pressing **Home**. **Open** depends on Android version: it works most reliably on **Android 16+**. On Android 14–15 the system may block background launches even with a valid media session.
+**“Open” on the home-screen card does nothing**  
+Start playback, open the app once, then press **Home**. **Open** depends on Android version — most reliable on **Android 16+**. On Android 14–15 the system may block background launches.
+
+**The home-screen card reappeared right after Stop**  
+Update to the latest build — **Stop** should pause the speakers. To hide the card entirely, turn off **Home-screen now playing** in Settings.
 
 **Stop works but Open does not**  
-Both buttons use the same media session; **Stop** only dismisses the card and never needs to open a window, but **Open** does. On Android 16+ the system allows that launch from the card; on older TV builds it may be blocked.
+Both buttons use the same media session. **Stop** pauses playback without opening a window; **Open** must launch the app. Android 16+ allows that from the card; older TV builds may block it.
 
-## How this was made
+## About
 
-I'm a designer and front-end developer by trade. I use AI-assisted coding tools to develop this app.
+Designer and front-end developer by trade. Built with AI-assisted coding tools.
 
-## License and feedback
+## License
 
 Source code is [MIT licensed](LICENSE). The Figtree font is under the [SIL Open Font License](LICENSE-Figtree.txt).
 
-Found a bug or have an idea? [Open an issue](https://github.com/lexnels/sonos-android-tv/issues).
+Found a bug or have an idea? [Open an issue](https://github.com/lexnels/Sonos-Player-on-Android-TV/issues).
